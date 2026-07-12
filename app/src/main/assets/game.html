@@ -36,25 +36,25 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
 .opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
 .opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; min-height: 0; }
+#table { flex: 0 0 16vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
 .decl-box { text-align: center; }
-.decl-box .val { font-size: 8vw; font-weight: 900; color: #f0d378; }
-.pile { display: flex; gap: 4px; margin-top: 8px; }
-.face-down { width: 32px; height: 45px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
-#hand { flex-shrink: 0; height: 80px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
-.hcard { width: 44px; height: 76px; border-radius: 5px; background: #fff; color: #222; margin-left: -14px; position: relative; flex-shrink: 0; }
+.decl-box .val { font-size: 7vw; font-weight: 900; color: #f0d378; }
+.pile { display: flex; gap: 3px; margin-top: 6px; }
+.face-down { width: 28px; height: 40px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
+#hand { flex-shrink: 0; height: 75px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
+.hcard { width: 42px; height: 72px; border-radius: 5px; background: #fff; color: #222; margin-left: -12px; position: relative; flex-shrink: 0; }
 .hcard:first-child { margin-left: 0; }
 .hcard.sel { transform: translateY(-10px); box-shadow: 0 4px 12px rgba(240,211,120,.4); }
 .hcard .tl { position: absolute; top: 2px; left: 3px; font-size: 2.8vw; font-weight: 800; }
 .hcard.red { color: #d33; }
-#bottomBar { flex-shrink: 0; background: linear-gradient(to top, #062018, rgba(6,32,24,.9)); padding: 8px 10px max(env(safe-area-inset-bottom),12px); }
-#rankbar { height: 36px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 8px; }
+#actionBar { flex-shrink: 0; padding: 6px 10px; }
+#rankbar { height: 34px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 6px; }
 #rankbar button { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.2vw; font-weight: 800; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
-#actRow { display: flex; gap: 8px; margin-bottom: 8px; }
+#actRow { display: flex; gap: 8px; }
 #actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
-#logPanel { max-height: 60px; overflow-y: auto; padding: 4px 8px; background: rgba(0,0,0,.2); border-radius: 8px; }
-#logPanel .log-item { font-size: 2.8vw; color: #cdbf99; line-height: 1.4; white-space: nowrap; }
+#logPanel { flex: 0 0 25vh; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: linear-gradient(to top, #062018, rgba(6,32,24,.85)); border-top: 1px solid rgba(212,175,55,.15); }
+#logPanel .log-item { font-size: 3.8vw; color: #cdbf99; line-height: 1.6; padding: 2px 0; }
 #logPanel .log-item b { color: #f0d378; }
 #logPanel .log-item .red { color: #e87f77; }
 .hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
@@ -90,11 +90,11 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
     <div id="opponents"></div>
     <div id="table"><div class="decl-box"><div class="val">等待叫牌</div></div><div class="pile"></div></div>
     <div id="hand"></div>
-    <div id="bottomBar">
+    <div id="actionBar">
       <div id="rankbar"></div>
       <div id="actRow"></div>
-      <div id="logPanel"></div>
     </div>
+    <div id="logPanel"></div>
   </div>
 </div>
 
