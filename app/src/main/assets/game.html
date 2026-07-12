@@ -239,7 +239,7 @@ function renderActions(){
   }
 
   const ranks = RANKS;
-  const selectedRank = isLead ? null : (rankbar.querySelector('.on')?.textContent || G.lastDecl.rank);
+  const selectedRank = rankbar.querySelector('.on')?.textContent || (!isLead ? G.lastDecl.rank : null);
   rankbar.innerHTML = ranks.map(r=>{
     const isCurrent = !isLead && r === G.lastDecl.rank;
     const isSelected = r === selectedRank;
