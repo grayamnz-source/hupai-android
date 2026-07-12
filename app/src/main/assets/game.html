@@ -46,15 +46,17 @@
   .switch.on { background: linear-gradient(90deg,#e8c468,#c9962a); }
   .switch.on::after { left: 23px; }
 
-  .btn { border: none; border-radius: 12px; font-weight: 800; font-size: 5vw; padding: 14px 0; width: 100%;
-    background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  .btn { border: none; border-radius: 12px; font-weight: 800; font-size: 5vw; padding: 16px 0; width: 100%;
+    background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; box-shadow: 0 6px 16px rgba(0,0,0,.35);
+    cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .btn.ghost { background: rgba(255,255,255,.08); color: #ede2c4; border: 1px solid rgba(212,175,55,.4); box-shadow: none; }
   .btn.dark { background: linear-gradient(180deg,#3a4a55,#222d34); color: #e8e0cc; box-shadow: none; }
   .btn.red { background: linear-gradient(180deg,#e0635a,#a8302a); color: #fff; }
-  .btn:active { transform: translateY(1px); }
-  .btn[disabled] { opacity: .4; }
-  .btn-sm { font-size: 4vw; padding: 11px 0; }
-  .link { background: none; border: none; color: #d8c896; font-size: 3.8vw; text-decoration: underline; }
+  .btn:active { transform: translateY(1px); opacity: 0.9; }
+  .btn[disabled] { opacity: .4; cursor: not-allowed; }
+  .btn-sm { font-size: 4vw; padding: 12px 0; }
+  .link { background: none; border: none; color: #d8c896; font-size: 3.8vw; text-decoration: underline; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .switch, .seg button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
   /* ---------- Game screen ---------- */
   #gameScreen { display: flex; flex-direction: column; }
@@ -168,8 +170,8 @@
       </div>
     </div>
 
-    <button class="btn" id="btnStart">开 始 游 戏</button>
-    <button class="link" id="btnRules">查看完整规则</button>
+    <button class="btn" id="btnStart" onclick="startGameNow()">开 始 游 戏</button>
+    <button class="link" id="btnRules" onclick="showRules()">查看完整规则</button>
   </div>
 
   <!-- Game -->
@@ -772,53 +774,45 @@ function showOver(wi){
 /* ===================== 启动界面交互 ===================== */
 const opts = { nplayers:3, upgrade:false, tolerance:true, verifyWin:true };
 
-function onReady(){
-  function bindSeg(id, key, parse){
-    const seg = $(id);
-    seg.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click',()=>{
-        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-        b.classList.add('on');
-        opts[key] = parse(b.dataset.v);
-      });
-      b.addEventListener('touchstart',(e)=>{ e.preventDefault(); b.click(); });
+function toggleSeg(seg, key, parse){
+  seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  seg.querySelector('[data-v="'+parse(opts[key])+'"]').classList.add('on');
+}
+
+function bindSeg(id, key, parse){
+  const seg = $(id);
+  seg.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      opts[key] = parse(b.dataset.v);
     });
-  }
-  bindSeg('segPlayers','nplayers', v=>parseInt(v));
-  function bindSwitch(id, key){
-    const sw=$(id);
-    sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
-    sw.addEventListener('touchstart',(e)=>{ e.preventDefault(); sw.click(); });
-  }
-  bindSwitch('swUpgrade','upgrade');
-  bindSwitch('swTolerance','tolerance');
-  bindSwitch('swVerify','verifyWin');
-
-  $('btnStart').addEventListener('click', ()=>{
-    $('startScreen').hidden=true;
-    $('gameScreen').hidden=false;
-    newGame(Object.assign({}, opts));
   });
-  $('btnStart').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnStart').click(); });
+}
+bindSeg('segPlayers','nplayers', v=>parseInt(v));
 
-  $('btnRules').addEventListener('click', ()=>{ $('startScreen').hidden=true; $('rulesScreen').hidden=false; });
-  $('btnRules').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnRules').click(); });
+function bindSwitch(id, key){
+  const sw=$(id);
+  sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
+}
+bindSwitch('swUpgrade','upgrade');
+bindSwitch('swTolerance','tolerance');
+bindSwitch('swVerify','verifyWin');
 
-  $('btnRulesBack').addEventListener('click', ()=>{ $('rulesScreen').hidden=true; $('startScreen').hidden=false; });
-  $('btnRulesBack').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnRulesBack').click(); });
-
-  $('btnAgain').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('gameScreen').hidden=false; newGame(Object.assign({},opts)); });
-  $('btnAgain').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnAgain').click(); });
-
-  $('btnHome').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('startScreen').hidden=false; });
-  $('btnHome').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnHome').click(); });
+function startGameNow(){
+  $('startScreen').hidden=true;
+  $('gameScreen').hidden=false;
+  newGame(Object.assign({}, opts));
 }
 
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', onReady);
-}else{
-  onReady();
+function showRules(){
+  $('startScreen').hidden=true;
+  $('rulesScreen').hidden=false;
 }
+
+$('btnRulesBack').addEventListener('click', ()=>{ $('rulesScreen').hidden=true; $('startScreen').hidden=false; });
+$('btnAgain').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('gameScreen').hidden=false; newGame(Object.assign({},opts)); });
+$('btnHome').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('startScreen').hidden=false; });
 </script>
 </body>
 </html>
