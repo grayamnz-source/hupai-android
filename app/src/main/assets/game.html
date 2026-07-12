@@ -289,7 +289,7 @@ function revealLast(){
   const wasRevealed = last.player;
   
   const cardDetails = last.cards.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
-  addLog(`掀牌：${G.players[wasRevealed].name} 的牌 [${cardDetails}]`);
+  addLog(`${G.players[revealer].name} 掀牌：${G.players[wasRevealed].name} 的牌 [${cardDetails}]`);
   
   if(isTruth){
     loser = revealer;
