@@ -39,13 +39,16 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #table { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; min-height: 0; }
 .decl-box { text-align: center; }
 .decl-box .val { font-size: 6vw; font-weight: 900; color: #f0d378; }
-.pile { display: flex; gap: 8px; margin-top: 8px; }
-.face-down { width: 52px; height: 72px; border-radius: 7px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
-.revealed { display: flex; gap: 8px; margin-top: 8px; }
-.rcard { width: 52px; height: 72px; border-radius: 7px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; position: relative; font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,.25); }
+.pile { display: flex; gap: 4px; margin-top: 8px; width: 100%; overflow-x: auto; overflow-y: visible; padding: 4px 2px; justify-content: center; }
+.face-down { width: 56px; height: 80px; border-radius: 7px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; flex-shrink: 0; }
+.revealed { display: flex; gap: 4px; margin-top: 8px; width: 100%; overflow-x: auto; padding: 4px 2px; justify-content: center; }
+.rcard { width: 56px; height: 80px; border-radius: 7px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; position: relative; font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,.25); flex-shrink: 0; }
 .rcard.red { color: #d33; }
-.rcard .tl { position: absolute; top: 3px; left: 3px; font-size: 3.4vw; line-height: 1; }
-.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5vw; }
+.rcard .tl { position: absolute; top: 3px; left: 4px; font-size: 3.6vw; line-height: 1; }
+.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5.5vw; }
+.game-over-box { text-align: center; padding: 20px; }
+.game-over-box .winner-text { font-size: 7vw; font-weight: 900; color: #f0d378; margin-bottom: 10px; }
+.game-over-box .hint-text { font-size: 3.6vw; color: #cdbf99; }
 #hand { flex: 0 0 16%; min-height: 90px; padding: 14px 4px 4px; overflow-x: auto; overflow-y: visible; display: flex; gap: 0; }
 .hcard { width: 46px; height: 82px; border-radius: 6px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; margin-left: -12px; position: relative; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,.25); border: 1px solid rgba(0,0,0,.08); }
 .hcard:first-child { margin-left: 0; }
@@ -160,10 +163,22 @@ function renderOpponents(){
 
 function renderTable(){
   const el = $('table');
+  
+  if(G.gameOver){
+    let winner = 0;
+    G.players.forEach((p,i)=>{ if(p.hand.length===0 && p.tableCardsPlayed) winner = i; });
+    el.innerHTML = `<div class="game-over-box"><div class="winner-text">🎉 ${G.players[winner].name} 赢了！</div><div class="hint-text">点击下方"开始下一轮游戏"按钮开始新一局</div></div>`;
+    return;
+  }
+  
   const decl = G.lastDecl.count>0 ? `${G.lastDecl.count}张${G.lastDecl.rank}` : '等待叫牌';
-  const piles = G.table.map(b=>`<div class="face-down"></div>`).join('');
+  
+  const allTableCards = [];
+  G.table.forEach(b=>allTableCards.push(...b.cards));
+  
+  const piles = allTableCards.map(()=>`<div class="face-down"></div>`).join('');
   let revealedHtml = '';
-  if(revealedCards){
+  if(revealedCards && revealedCards.length>0){
     revealedHtml = `<div class="revealed">${revealedCards.map(c=>cardHtml(c,'rcard')).join('')}</div>`;
   }
   el.innerHTML = `<div class="decl-box"><div class="val">${decl}</div></div><div class="pile">${piles}</div>${revealedHtml}`;
@@ -272,6 +287,10 @@ function revealLast(){
   let loser, nextStarter;
   const revealer = G.turn;
   const wasRevealed = last.player;
+  
+  const cardDetails = last.cards.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
+  addLog(`掀牌：${G.players[wasRevealed].name} 的牌 [${cardDetails}]`);
+  
   if(isTruth){
     loser = revealer;
     nextStarter = wasRevealed;
