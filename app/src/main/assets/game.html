@@ -123,7 +123,7 @@ let revealedCards = null;
 
 function newGame(){
   G = { players:[{name:'你', hand:[], isAI:false, tableCardsPlayed:false},{name:'电脑·甲', hand:[], isAI:true, tableCardsPlayed:false},{name:'电脑·乙', hand:[], isAI:true, tableCardsPlayed:false}],
-    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false, winner:-1 };
+    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false, winner:-1, selectedRank:null };
   G.turn = Math.floor(Math.random() * G.players.length);
   const deck = shuffle(makeDeck());
   const per = Math.floor(deck.length / G.players.length);
@@ -232,6 +232,10 @@ function renderActions(){
     return;
   }
 
+  if(!isLead && !G.selectedRank){
+    G.selectedRank = G.lastDecl.rank;
+  }
+
   if(lastFinish){
     rankbar.innerHTML = '';
     actRow.innerHTML = `<button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
@@ -239,7 +243,7 @@ function renderActions(){
   }
 
   const ranks = RANKS;
-  const selectedRank = rankbar.querySelector('.on')?.textContent || (!isLead ? G.lastDecl.rank : null);
+  const selectedRank = G.selectedRank;
   rankbar.innerHTML = ranks.map(r=>{
     const isCurrent = !isLead && r === G.lastDecl.rank;
     const isSelected = r === selectedRank;
@@ -249,7 +253,7 @@ function renderActions(){
 
   const btnText = isLead ? '叫牌' : '跟牌';
   const hasSelectedCards = $('hand').querySelectorAll('.hcard.sel').length > 0;
-  const hasSelectedRank = rankbar.querySelector('.on')?.textContent;
+  const hasSelectedRank = G.selectedRank;
   const canCall = hasSelectedCards && hasSelectedRank;
   const canPass = !isLead;
   const canReveal = G.table.length > 0;
@@ -257,12 +261,12 @@ function renderActions(){
 }
 
 function selectRank(r){
-  $('rankbar').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.textContent===r));
-  if(G.turn===0) renderActions();
+  G.selectedRank = r;
+  renderActions();
 }
 
 function actionFollow(){
-  const rank = $('rankbar').querySelector('.on')?.textContent;
+  const rank = G.selectedRank;
   if(!rank) return;
   const selected = Array.from($('hand').querySelectorAll('.hcard.sel')).map(h=>parseInt(h.dataset.i));
   if(selected.length===0) return;
@@ -287,6 +291,7 @@ function playCards(indices, declaredRank){
   G.table.push({player:G.turn, cards:cards, declaredRank:declaredRank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:declaredRank};
   G.passCount = 0;
+  G.selectedRank = null;
   const action = G.table.length===1 ? '叫牌' : '跟牌';
   addLog(`${G.players[G.turn].name} ${action}: ${cards.length}张${declaredRank}`);
   revealedCards = null;
@@ -327,6 +332,7 @@ function revealLast(){
       G.players[loser].hand.push(...allCards);
       if(loser===0) sortPlayerHand();
       G.lastDecl = {count:0, rank:null};
+      G.selectedRank = null;
       G.turn = wasRevealed;
       addLog(`<b>属实 ✓</b> 掀牌玩家 ${G.players[revealer].name} 收回 ${allCards.length}张牌，被掀牌玩家 ${G.players[wasRevealed].name} 开下轮`);
     }
@@ -337,6 +343,7 @@ function revealLast(){
     G.players[loser].hand.push(...allCards);
     if(loser===0) sortPlayerHand();
     G.lastDecl = {count:0, rank:null};
+    G.selectedRank = null;
     addLog(`<b class="red">有假 ✓</b> (${fakeText}) 被掀牌玩家 ${G.players[loser].name} 收回 ${allCards.length}张牌，掀牌玩家 ${G.players[nextStarter].name} 开下轮`);
     G.turn = nextStarter;
   }
