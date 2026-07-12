@@ -239,7 +239,7 @@ function renderActions(){
   }
 
   const ranks = RANKS;
-  const selectedRank = rankbar.querySelector('.on')?.textContent || (!isLead ? G.lastDecl.rank : null);
+  const selectedRank = isLead ? null : (rankbar.querySelector('.on')?.textContent || G.lastDecl.rank);
   rankbar.innerHTML = ranks.map(r=>{
     const isCurrent = !isLead && r === G.lastDecl.rank;
     const isSelected = r === selectedRank;
@@ -251,7 +251,9 @@ function renderActions(){
   const hasSelectedCards = $('hand').querySelectorAll('.hcard.sel').length > 0;
   const hasSelectedRank = rankbar.querySelector('.on')?.textContent;
   const canCall = hasSelectedCards && hasSelectedRank;
-  actRow.innerHTML = `<button class="btn ${canCall?'':'disabled'}" onclick="${canCall?'actionFollow()':''}">${btnText}</button><button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
+  const canPass = !isLead;
+  const canReveal = G.table.length > 0;
+  actRow.innerHTML = `<button class="btn ${canCall?'':'disabled'}" onclick="${canCall?'actionFollow()':''}">${btnText}</button><button class="btn ${canReveal?'':'disabled'}" onclick="${canReveal?'actionReveal()':''}">掀牌</button><button class="btn ${canPass?'':'disabled'}" onclick="${canPass?'actionPass()':''}">过牌</button>`;
 }
 
 function selectRank(r){
