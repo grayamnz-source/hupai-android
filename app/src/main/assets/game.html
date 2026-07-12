@@ -238,7 +238,7 @@ function renderActions(){
   }
 
   const ranks = isLead || opts.upgrade ? RANKS : [G.lastDecl.rank];
-  const selectedRank = rankbar.querySelector('.on')?.textContent || (isLead ? '3' : G.lastDecl.rank);
+  const selectedRank = rankbar.querySelector('.on')?.textContent || (!isLead ? G.lastDecl.rank : null);
   rankbar.innerHTML = ranks.map(r=>`<button ${r===selectedRank?'class="on"':''} onclick="selectRank('${r}')">${r}</button>`).join('');
 
   const btnText = isLead ? '叫牌' : '跟牌';
@@ -363,14 +363,14 @@ function aiTurn(){
   const p = G.players[G.turn];
   if(p.hand.length===0) return;
   if(isLastHandFinisher()){
-    if(Math.random()<0.4){
+    if(Math.random()<0.5){
       actionReveal();
     } else {
       actionPass();
     }
     return;
   }
-  if(G.table.length>0 && Math.random()<0.3){
+  if(G.table.length>0 && Math.random()<0.5){
     actionReveal(); return;
   }
   const rank = G.lastDecl.count>0 && !opts.upgrade ? G.lastDecl.rank : RANKS[Math.floor(Math.random()*RANKS.length)];
