@@ -121,7 +121,7 @@ let revealedCards = null;
 
 function newGame(){
   G = { players:[{name:'你', hand:[], isAI:false, tableCardsPlayed:false},{name:'电脑·甲', hand:[], isAI:true, tableCardsPlayed:false},{name:'电脑·乙', hand:[], isAI:true, tableCardsPlayed:false}],
-    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false };
+    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false, winner:-1 };
   const deck = shuffle(makeDeck());
   const per = Math.floor(deck.length / G.players.length);
   G.players.forEach((p,i)=>{ p.hand = deck.slice(i*per, (i+1)*per); });
@@ -164,13 +164,6 @@ function renderOpponents(){
 function renderTable(){
   const el = $('table');
   
-  if(G.gameOver){
-    let winner = 0;
-    G.players.forEach((p,i)=>{ if(p.hand.length===0 && p.tableCardsPlayed) winner = i; });
-    el.innerHTML = `<div class="game-over-box"><div class="winner-text">🎉 ${G.players[winner].name} 赢了！</div><div class="hint-text">点击下方"开始下一轮游戏"按钮开始新一局</div></div>`;
-    return;
-  }
-  
   const decl = G.lastDecl.count>0 ? `${G.lastDecl.count}张${G.lastDecl.rank}` : '等待叫牌';
   
   const allTableCards = [];
@@ -181,7 +174,13 @@ function renderTable(){
   if(revealedCards && revealedCards.length>0){
     revealedHtml = `<div class="revealed">${revealedCards.map(c=>cardHtml(c,'rcard')).join('')}</div>`;
   }
-  el.innerHTML = `<div class="decl-box"><div class="val">${decl}</div></div><div class="pile">${piles}</div>${revealedHtml}`;
+  
+  let gameOverHtml = '';
+  if(G.gameOver){
+    gameOverHtml = `<div class="game-over-box"><div class="winner-text">🎉 ${G.players[G.winner].name} 赢了！</div><div class="hint-text">点击下方"开始下一轮游戏"按钮开始新一局</div></div>`;
+  }
+  
+  el.innerHTML = `<div class="decl-box"><div class="val">${decl}</div></div><div class="pile">${piles}</div>${revealedHtml}${gameOverHtml}`;
 }
 
 function cardHtml(c, cls){
@@ -280,51 +279,61 @@ function revealLast(){
   revealedCards = last.cards;
   renderTable();
   
-  const allCards = [];
-  G.table.forEach(b=>allCards.push(...b.cards));
-  G.table = [];
-  
-  let loser, nextStarter;
   const revealer = G.turn;
   const wasRevealed = last.player;
   
   const cardDetails = last.cards.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
   addLog(`${G.players[revealer].name} 掀牌：${G.players[wasRevealed].name} 的牌 [${cardDetails}]`);
   
+  const allCards = [];
+  G.table.forEach(b=>allCards.push(...b.cards));
+  
   if(isTruth){
-    loser = revealer;
-    nextStarter = wasRevealed;
-    addLog(`<b>属实 ✓</b> 掀牌玩家 ${G.players[revealer].name} 收回 ${allCards.length}张牌，被掀牌玩家 ${G.players[nextStarter].name} 开下轮`);
+    const loser = revealer;
+    if(G.players[wasRevealed].hand.length===0 && G.players[wasRevealed].tableCardsPlayed){
+      G.gameOver = true;
+      G.winner = wasRevealed;
+      addLog(`<b>属实 ✓</b> ${G.players[wasRevealed].name} 赢了！`);
+    } else {
+      G.table = [];
+      G.players[loser].hand.push(...allCards);
+      if(loser===0) sortPlayerHand();
+      G.lastDecl = {count:0, rank:null};
+      G.turn = wasRevealed;
+      addLog(`<b>属实 ✓</b> 掀牌玩家 ${G.players[revealer].name} 收回 ${allCards.length}张牌，被掀牌玩家 ${G.players[wasRevealed].name} 开下轮`);
+    }
   } else {
-    loser = wasRevealed;
-    nextStarter = revealer;
+    const loser = wasRevealed;
+    const nextStarter = revealer;
+    G.table = [];
+    G.players[loser].hand.push(...allCards);
+    if(loser===0) sortPlayerHand();
+    G.lastDecl = {count:0, rank:null};
     addLog(`<b class="red">有假 ✓</b> (${fakeText}) 被掀牌玩家 ${G.players[loser].name} 收回 ${allCards.length}张牌，掀牌玩家 ${G.players[nextStarter].name} 开下轮`);
+    G.turn = nextStarter;
   }
-  G.players[loser].hand.push(...allCards);
-  if(loser===0) sortPlayerHand();
-  G.lastDecl = {count:0, rank:null};
   if(!isTruth && opts.tolerance) G.wrongReveal++;
   G.busy = false;
-  G.turn = nextStarter;
   render();
 }
 
 function nextTurn(){
-  let winner = -1;
-  G.players.forEach((p,i)=>{ if(p.hand.length===0 && p.tableCardsPlayed) winner = i; });
-  if(winner>=0){
-    G.gameOver = true;
-    addLog(`${G.players[winner].name} 赢了！`);
-    render();
-    return;
-  }
-  if(G.passCount >= G.players.length-1){ 
-    const starter = G.table.length>0 ? G.table[G.table.length-1].player : G.turn;
+  const activePlayers = G.players.filter(p=>p.hand.length>0).length;
+  if(G.passCount >= activePlayers-1 && G.table.length>0){ 
+    const lastPlayer = G.table[G.table.length-1].player;
+    if(G.players[lastPlayer].hand.length===0 && G.players[lastPlayer].tableCardsPlayed){
+      G.gameOver = true;
+      G.winner = lastPlayer;
+      revealedCards = G.table.reduce((acc,b)=>acc.concat(b.cards),[]);
+      addLog(`${G.players[lastPlayer].name} 赢了！`);
+      render();
+      return;
+    }
     G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; revealedCards=null; 
     addLog('连续过牌，桌面牌淘汰');
-    G.turn = starter;
+    G.turn = lastPlayer;
   }
-  do { G.turn = (G.turn+1) % G.players.length; } while(G.turn>0 && G.players[G.turn].hand.length===0);
+  do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
   render();
 }
 
