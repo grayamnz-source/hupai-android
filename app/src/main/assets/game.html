@@ -36,25 +36,32 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
 .opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
 .opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 0 0 16vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
+#table { flex: 0 0 14vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
 .decl-box { text-align: center; }
-.decl-box .val { font-size: 7vw; font-weight: 900; color: #f0d378; }
+.decl-box .val { font-size: 6.5vw; font-weight: 900; color: #f0d378; }
 .pile { display: flex; gap: 3px; margin-top: 6px; }
-.face-down { width: 28px; height: 40px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
-#hand { flex-shrink: 0; height: 75px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
-.hcard { width: 42px; height: 72px; border-radius: 5px; background: #fff; color: #222; margin-left: -12px; position: relative; flex-shrink: 0; }
+.face-down { width: 24px; height: 34px; border-radius: 3px; background: repeating-linear-gradient(45deg,#9e2b25 0 5px,#7c201c 5px 10px); border: 1px solid #d4af37; }
+.revealed { display: flex; gap: 4px; margin-top: 6px; }
+.rcard { width: 26px; height: 36px; border-radius: 3px; background: #f5f2ea; color: #222; position: relative; font-weight: 800; }
+.rcard.red { color: #d33; }
+.rcard .tl { position: absolute; top: 1px; left: 2px; font-size: 2.4vw; line-height: 1; }
+.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4vw; }
+#hand { flex-shrink: 0; height: 90px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
+.hcard { width: 46px; height: 82px; border-radius: 6px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; margin-left: -12px; position: relative; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,.25); border: 1px solid rgba(0,0,0,.08); }
 .hcard:first-child { margin-left: 0; }
-.hcard.sel { transform: translateY(-10px); box-shadow: 0 4px 12px rgba(240,211,120,.4); }
-.hcard .tl { position: absolute; top: 2px; left: 3px; font-size: 2.8vw; font-weight: 800; }
+.hcard.sel { transform: translateY(-12px); box-shadow: 0 6px 14px rgba(240,211,120,.5); }
+.hcard .top { position: absolute; top: 3px; left: 0; right: 0; text-align: center; font-size: 3.8vw; font-weight: 900; line-height: 1; }
+.hcard .bot { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 4.8vw; line-height: 1; }
 .hcard.red { color: #d33; }
+.hcard.jk { background: linear-gradient(160deg,#fff,#f0e6cf); }
 #actionBar { flex-shrink: 0; padding: 6px 10px; }
 #rankbar { height: 34px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 6px; }
 #rankbar button { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.2vw; font-weight: 800; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
 #actRow { display: flex; gap: 8px; }
 #actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
-#logPanel { flex: 0 0 25vh; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: linear-gradient(to top, #062018, rgba(6,32,24,.85)); border-top: 1px solid rgba(212,175,55,.15); }
-#logPanel .log-item { font-size: 3.8vw; color: #cdbf99; line-height: 1.6; padding: 2px 0; }
+#logPanel { flex: 1 1 auto; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
+#logPanel .log-item { font-size: 4vw; color: #cdbf99; line-height: 1.5; padding: 3px 0; }
 #logPanel .log-item b { color: #f0d378; }
 #logPanel .log-item .red { color: #e87f77; }
 .hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
@@ -100,11 +107,12 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 
 <script>
 const RANKS = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
+const SUITS = ['♠','♥','♦','♣'];
 let cid = 0;
 
 function makeDeck(){
   const d = [];
-  for(const r of RANKS) for(const s of ['♠','♥','♦','♣']) d.push({id: cid++, rank:r, suit:s, isJoker:false, color:(s==='♥'||s==='♦')?'red':'black'});
+  for(const r of RANKS) for(const s of SUITS) d.push({id: cid++, rank:r, suit:s, isJoker:false, color:(s==='♥'||s==='♦')?'red':'black'});
   d.push({id: cid++, rank:'JB', isJoker:true, color:'black', label:'小王'});
   d.push({id: cid++, rank:'JR', isJoker:true, color:'red', label:'大王'});
   return d;
@@ -137,6 +145,7 @@ bindSwitch('swVerify','verifyWin');
 
 let G = {};
 let logHistory = [];
+let revealedCards = null;
 
 function newGame(cfg){
   G = { players:[{name:'你', hand:[], isAI:false},{name:'电脑·甲', hand:[], isAI:true},{name:'电脑·乙', hand:[], isAI:true}],
@@ -145,9 +154,19 @@ function newGame(cfg){
   const deck = shuffle(makeDeck());
   const per = Math.floor(deck.length / G.players.length);
   G.players.forEach((p,i)=>{ p.hand = deck.slice(i*per, (i+1)*per); });
-  G.players[0].hand.sort((a,b)=>RANKS.indexOf(a.isJoker?'2':a.rank)-RANKS.indexOf(b.isJoker?'2':b.rank));
+  sortPlayerHand();
   logHistory = ['新局开始'];
+  revealedCards = null;
   render();
+}
+
+function sortPlayerHand(){
+  G.players[0].hand.sort((a,b)=>{
+    const ra = RANKS.indexOf(a.isJoker?'2':a.rank);
+    const rb = RANKS.indexOf(b.isJoker?'2':b.rank);
+    if(ra!==rb) return ra-rb;
+    return a.color.localeCompare(b.color);
+  });
 }
 
 function render(){
@@ -167,12 +186,24 @@ function renderTable(){
   const el = $('table');
   const decl = G.lastDecl.count>0 ? `${G.lastDecl.count}张${G.lastDecl.rank}` : '等待叫牌';
   const piles = G.table.map(b=>`<div class="face-down"></div>`).join('');
-  el.innerHTML = `<div class="decl-box"><div class="val">${decl}</div></div><div class="pile">${piles}</div>`;
+  let revealedHtml = '';
+  if(revealedCards){
+    revealedHtml = `<div class="revealed">${revealedCards.map(c=>cardHtml(c,'rcard')).join('')}</div>`;
+  }
+  el.innerHTML = `<div class="decl-box"><div class="val">${decl}</div></div><div class="pile">${piles}</div>${revealedHtml}`;
+}
+
+function cardHtml(c, cls){
+  if(c.isJoker) return `<div class="${cls} jk"><div class="cs">${c.label}</div></div>`;
+  return `<div class="${cls} ${c.color}"><div class="tl">${c.rank}</div><div class="cs">${c.suit}</div></div>`;
 }
 
 function renderHand(){
   const el = $('hand');
-  el.innerHTML = G.players[0].hand.map((c,i)=>`<div class="hcard ${c.color}" data-i="${i}"><div class="tl">${c.rank}</div></div>`).join('');
+  el.innerHTML = G.players[0].hand.map((c,i)=>{
+    if(c.isJoker) return `<div class="hcard jk ${c.color}" data-i="${i}"><div class="top">${c.label}</div><div class="bot">🃏</div></div>`;
+    return `<div class="hcard ${c.color}" data-i="${i}"><div class="top">${c.rank}</div><div class="bot">${c.suit}</div></div>`;
+  }).join('');
   el.querySelectorAll('.hcard').forEach(h=>{ h.addEventListener('click',()=>h.classList.toggle('sel')); });
 }
 
@@ -226,8 +257,9 @@ function playCards(indices, declaredRank){
   G.table.push({player:G.turn, cards:cards, declaredRank:declaredRank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:declaredRank};
   G.passCount = 0;
-  const action = G.lastDecl.count===cards.length && !G.table.slice(0,-1).length ? '叫牌' : '跟牌';
+  const action = G.table.length===1 ? '叫牌' : '跟牌';
   addLog(`${G.players[G.turn].name} ${action}: ${cards.length}张${declaredRank}`);
+  revealedCards = null;
   nextTurn();
 }
 
@@ -236,20 +268,41 @@ function revealLast(){
   const last = G.table[G.table.length-1];
   const actual = last.cards.filter(c=>c.isJoker || c.rank===last.declaredRank).length;
   const isTruth = actual===last.cards.length;
-  addLog(isTruth ? `<b>属实 ✓</b> 掀牌者收回` : `<b class="red">有假 ✓</b> 被质疑者收回`);
+  
+  revealedCards = last.cards;
+  renderTable();
+  
   const allCards = [];
   G.table.forEach(b=>allCards.push(...b.cards));
   G.table = [];
-  G.players[isTruth ? G.turn : last.player].hand.push(...allCards);
+  
+  let loser, nextStarter;
+  if(isTruth){
+    loser = G.turn;
+    nextStarter = G.turn;
+    addLog(`<b>属实 ✓</b> ${G.players[G.turn].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
+  } else {
+    loser = last.player;
+    nextStarter = G.turn;
+    addLog(`<b class="red">有假 ✓</b> ${G.players[last.player].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
+  }
+  G.players[loser].hand.push(...allCards);
+  if(loser===0) sortPlayerHand();
   G.lastDecl = {count:0, rank:null};
   if(!isTruth && opts.tolerance) G.wrongReveal++;
   G.busy = false;
-  nextTurn();
+  G.turn = nextStarter;
+  render();
 }
 
 function nextTurn(){
   if(G.players[0].hand.length===0){ addLog('你赢了！'); return; }
-  if(G.passCount >= G.players.length-1){ G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; addLog('连续过牌，桌面牌淘汰'); }
+  if(G.passCount >= G.players.length-1){ 
+    const starter = G.table.length>0 ? G.table[G.table.length-1].player : G.turn;
+    G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; revealedCards=null; 
+    addLog('连续过牌，桌面牌淘汰');
+    G.turn = starter;
+  }
   do { G.turn = (G.turn+1) % G.players.length; } while(G.turn>0 && G.players[G.turn].hand.length===0);
   render();
 }
@@ -269,14 +322,15 @@ function aiTurn(){
   G.table.push({player:G.turn, cards:cards, declaredRank:rank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:rank};
   G.passCount = 0;
-  const action = G.lastDecl.count===cards.length && !G.table.slice(0,-1).length ? '叫牌' : '跟牌';
+  const action = G.table.length===1 ? '叫牌' : '跟牌';
   addLog(`${p.name} ${action}: ${cards.length}张${rank}`);
+  revealedCards = null;
   nextTurn();
 }
 
 function addLog(msg){
   logHistory.push(msg);
-  if(logHistory.length>8) logHistory.shift();
+  if(logHistory.length>12) logHistory.shift();
   renderLog();
 }
 
