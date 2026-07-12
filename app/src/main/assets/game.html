@@ -197,6 +197,12 @@ function renderHand(){
   el.querySelectorAll('.hcard').forEach(h=>{ h.addEventListener('click',()=>h.classList.toggle('sel')); });
 }
 
+function isLastHandFinisher(){
+  if(G.table.length===0) return false;
+  const lastPlayer = G.table[G.table.length-1].player;
+  return G.players[lastPlayer].hand.length===0 && G.players[lastPlayer].tableCardsPlayed;
+}
+
 function renderActions(){
   const rankbar = $('rankbar');
   const actRow = $('actRow');
@@ -213,11 +219,18 @@ function renderActions(){
   
   const isMyTurn = G.turn===0 && !G.busy;
   const isLead = G.lastDecl.count===0;
+  const lastFinish = isLastHandFinisher();
 
   if(!isMyTurn){
     rankbar.innerHTML = '';
     actRow.innerHTML = `<div class="hint">等待 ${G.players[G.turn].name} 操作…</div>`;
     setTimeout(()=>{ if(G.turn>0 && !G.busy && !G.gameOver) aiTurn(); }, 800);
+    return;
+  }
+
+  if(lastFinish){
+    rankbar.innerHTML = '';
+    actRow.innerHTML = `<button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
     return;
   }
 
@@ -340,6 +353,14 @@ function nextTurn(){
 function aiTurn(){
   const p = G.players[G.turn];
   if(p.hand.length===0) return;
+  if(isLastHandFinisher()){
+    if(Math.random()<0.4){
+      actionReveal();
+    } else {
+      actionPass();
+    }
+    return;
+  }
   if(G.table.length>0 && Math.random()<0.3){
     actionReveal(); return;
   }
