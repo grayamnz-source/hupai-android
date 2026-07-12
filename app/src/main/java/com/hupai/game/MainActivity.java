@@ -75,7 +75,15 @@ public class MainActivity extends Activity {
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         webView.setBackgroundColor(Color.parseColor("#0d2818"));
 
+        webView.addJavascriptInterface(new AndroidInterface(), "Android");
         webView.loadUrl("file:///android_asset/game.html");
+    }
+
+    public class AndroidInterface {
+        @android.webkit.JavascriptInterface
+        public void finishActivity() {
+            finish();
+        }
     }
 
     @Override

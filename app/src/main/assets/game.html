@@ -60,8 +60,11 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
 #actRow { display: flex; gap: 8px; margin-bottom: 6px; }
 #actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
-#newGameBtn { width: 100%; padding: 10px; font-size: 3.6vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
+#ctrlRow { display: flex; gap: 8px; }
+#newGameBtn { flex: 1; padding: 10px; font-size: 3.6vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
 #newGameBtn:active { background: rgba(212,175,55,.2); }
+#exitBtn { flex: 1; padding: 10px; font-size: 3.6vw; font-weight: 800; color: #e87f77; background: rgba(0,0,0,.3); border: 1px solid rgba(222,85,77,.3); border-radius: 8px; cursor: pointer; }
+#exitBtn:active { background: rgba(222,85,77,.2); }
 #logPanel { flex: 0 0 18vh; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
 #logPanel .log-item { font-size: 3.2vw; color: #cdbf99; line-height: 1.4; padding: 2px 0; }
 #logPanel .log-item b { color: #f0d378; }
@@ -71,38 +74,17 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 </head>
 <body>
 <div id="app">
-  <div id="startScreen" class="screen">
-    <div class="logo">唬牌</div>
-    <div class="subtitle">吹 · 牛 · 皮</div>
-    <div class="panel">
-      <div class="opt-row">
-        <div><div class="opt-label">玩家人数</div><div class="opt-desc">你 + 电脑</div></div>
-        <div class="seg" id="segPlayers"><button data-v="3" class="on">3人</button><button data-v="4">4人</button></div>
-      </div>
-      <div class="opt-row">
-        <div><div class="opt-label">升级跟牌</div><div class="opt-desc">可加注更大点数或更多张</div></div>
-        <button class="switch" id="swUpgrade"></button>
-      </div>
-      <div class="opt-row">
-        <div><div class="opt-label">容错防刷</div><div class="opt-desc">连续3次掀错后自动过牌</div></div>
-        <button class="switch on" id="swTolerance"></button>
-      </div>
-      <div class="opt-row">
-        <div><div class="opt-label">胜利核验</div><div class="opt-desc">出完手牌需经核验才算赢</div></div>
-        <button class="switch on" id="swVerify"></button>
-      </div>
-    </div>
-    <button class="btn" id="btnStart" onclick="startGameNow()">开 始 游 戏</button>
-  </div>
-
-  <div id="gameScreen" class="screen" hidden>
+  <div id="gameScreen" class="screen">
     <div id="opponents"></div>
     <div id="table"><div class="decl-box"><div class="val">等待叫牌</div></div><div class="pile"></div></div>
     <div id="hand"></div>
     <div id="actionBar">
       <div id="rankbar"></div>
       <div id="actRow"></div>
-      <button id="newGameBtn" onclick="restartGame()">重新开始游戏</button>
+      <div id="ctrlRow">
+        <button id="newGameBtn" onclick="restartGame()">重新开始游戏</button>
+        <button id="exitBtn" onclick="exitGame()">退出游戏</button>
+      </div>
     </div>
     <div id="logPanel"></div>
   </div>
@@ -124,36 +106,15 @@ function makeDeck(){
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function $(id){ return document.getElementById(id); }
 
-const opts = { nplayers:3, upgrade:false, tolerance:true, verifyWin:true };
-
-function bindSeg(id, key){
-  const seg = $(id);
-  seg.querySelectorAll('button').forEach(b=>{
-    b.addEventListener('click',()=>{
-      seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');
-      opts[key] = parseInt(b.dataset.v);
-    });
-  });
-}
-bindSeg('segPlayers','nplayers');
-
-function bindSwitch(id, key){
-  const sw=$(id);
-  sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
-}
-bindSwitch('swUpgrade','upgrade');
-bindSwitch('swTolerance','tolerance');
-bindSwitch('swVerify','verifyWin');
+const opts = { nplayers:3, upgrade:false, tolerance:false, verifyWin:true };
 
 let G = {};
 let logHistory = [];
 let revealedCards = null;
 
-function newGame(cfg){
+function newGame(){
   G = { players:[{name:'你', hand:[], isAI:false, tableCardsPlayed:false},{name:'电脑·甲', hand:[], isAI:true, tableCardsPlayed:false},{name:'电脑·乙', hand:[], isAI:true, tableCardsPlayed:false}],
-    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:cfg, busy:false, passCount:0, wrongReveal:0, gameOver:false };
-  if(cfg.nplayers===4) G.players.push({name:'电脑·丙', hand:[], isAI:true, tableCardsPlayed:false});
+    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false };
   const deck = shuffle(makeDeck());
   const per = Math.floor(deck.length / G.players.length);
   G.players.forEach((p,i)=>{ p.hand = deck.slice(i*per, (i+1)*per); });
@@ -161,6 +122,14 @@ function newGame(cfg){
   logHistory = ['新局开始'];
   revealedCards = null;
   render();
+}
+
+function exitGame(){
+  if(window.Android && typeof window.Android.finishActivity === 'function'){
+    window.Android.finishActivity();
+  } else {
+    window.close();
+  }
 }
 
 function sortPlayerHand(){
@@ -367,15 +336,13 @@ function renderLog(){
   el.scrollTop = el.scrollHeight;
 }
 
-function startGameNow(){
-  $('startScreen').hidden = true;
-  $('gameScreen').hidden = false;
-  newGame(Object.assign({}, opts));
+function restartGame(){
+  newGame();
 }
 
-function restartGame(){
-  newGame(Object.assign({}, opts));
-}
+document.addEventListener('DOMContentLoaded', ()=>{
+  newGame();
+});
 </script>
 </body>
 </html>
