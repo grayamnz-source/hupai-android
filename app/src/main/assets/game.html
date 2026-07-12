@@ -377,7 +377,7 @@ function nextTurn(){
 function aiTurn(){
   const p = G.players[G.turn];
   if(p.hand.length===0) return;
-  const revealChance = Math.random();
+  const revealChance = Math.random() * 0.5;
   if(isLastHandFinisher()){
     if(Math.random()<revealChance){
       actionReveal();
