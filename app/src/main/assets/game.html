@@ -31,30 +31,30 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .btn:active { opacity: 0.9; }
 .link { background: none; border: none; color: #d8c896; font-size: 3.8vw; text-decoration: underline; cursor: pointer; margin-top: 8px; }
 
-#gameScreen { background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
-#opponents { display: flex; justify-content: center; gap: 10px; padding: 10px; flex-shrink: 0; }
+#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
+#opponents { display: flex; justify-content: center; gap: 10px; padding: max(env(safe-area-inset-top),10px) 10px 4px; flex-shrink: 0; }
 .opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
 .opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
 .opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+#table { flex: 0 0 22vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
 .decl-box { text-align: center; }
-.decl-box .val { font-size: 9vw; font-weight: 900; color: #f0d378; }
-.pile { display: flex; gap: 4px; margin-top: 10px; }
-.face-down { width: 38px; height: 53px; border-radius: 5px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
-#log { height: 40px; text-align: center; font-size: 3.4vw; color: #cdbf99; padding: 5px; flex-shrink: 0; }
-#hand { height: 90px; padding: 5px 5px 120px; overflow-x: auto; display: flex; gap: -4px; flex-shrink: 0; }
-.hcard { width: 48px; height: 85px; border-radius: 5px; background: #fff; color: #222; margin-left: -16px; position: relative; flex-shrink: 0; }
+.decl-box .val { font-size: 8vw; font-weight: 900; color: #f0d378; }
+.pile { display: flex; gap: 4px; margin-top: 8px; }
+.face-down { width: 32px; height: 45px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
+#log { flex-shrink: 0; height: 36px; text-align: center; font-size: 3.2vw; color: #cdbf99; padding: 4px; }
+#hand { flex-shrink: 0; height: 80px; padding: 4px; overflow-x: auto; display: flex; gap: -4px; }
+.hcard { width: 44px; height: 76px; border-radius: 5px; background: #fff; color: #222; margin-left: -14px; position: relative; flex-shrink: 0; }
 .hcard:first-child { margin-left: 0; }
-.hcard.sel { transform: translateY(-12px); }
-.hcard .tl { position: absolute; top: 2px; left: 3px; font-size: 3vw; font-weight: 800; }
+.hcard.sel { transform: translateY(-10px); }
+.hcard .tl { position: absolute; top: 2px; left: 3px; font-size: 2.8vw; font-weight: 800; }
 .hcard.red { color: #d33; }
-#actions { padding: 10px; background: rgba(6,32,24,.95); flex-shrink: 0; }
-.act-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.act-row .btn { font-size: 4.5vw; padding: 12px 0; }
-.rankbar { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
-.rankbar button { width: 12vw; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 4.2vw; font-weight: 800; }
+#actions { flex-shrink: 0; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: linear-gradient(to top, #062018 90%, rgba(6,32,24,.9)); }
+.act-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.act-row .btn { font-size: 4vw; padding: 10px 0; }
+.rankbar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.rankbar button { width: 10vw; padding: 6px 0; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.6vw; font-weight: 800; }
 .rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
-.hint { font-size: 3.4vw; color: #9fb6a6; text-align: center; margin-bottom: 8px; }
+.hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
 </style>
 </head>
 <body>
