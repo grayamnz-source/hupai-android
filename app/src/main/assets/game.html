@@ -102,7 +102,7 @@
   #log b { color: #f0d378; }
   #log .red { color: #e87f77; }
 
-  #hand { padding: 4px 6px 2px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 0; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+  #hand { padding: 4px 6px 130px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 0; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
   #hand .hcard { margin-left: -3.2vw; transition: transform .12s, margin .12s; }
   #hand .hcard:first-child { margin-left: 0; }
   #hand .hcard.sel { transform: translateY(-14px); box-shadow: 0 8px 14px rgba(240,211,120,.5); }
@@ -110,7 +110,7 @@
   #hand .hcard .cs { font-size: 5.4vw; }
   #hand .hcard.jk .cs { font-size: 3.2vw; }
 
-  #actions { padding: 6px 10px max(env(safe-area-inset-bottom),8px); }
+  #actions { position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 10px max(env(safe-area-inset-bottom),10px); background: linear-gradient(to top, rgba(6,32,24,.98), rgba(6,32,24,.9), rgba(6,32,24,0)); z-index: 100; }
   .act-row { display: flex; gap: 8px; }
   .act-row .btn { font-size: 4.3vw; padding: 12px 0; }
   .rankbar { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 8px; }
@@ -584,7 +584,7 @@ function renderTable(){
   if(G._reveal){
     // 掀牌揭示
     const d = document.createElement('div'); d.className='decl-box';
-    d.innerHTML = '<div class="lab">掀牌核验 · 声明 '+G._reveal.count+'张'+G._reveal.rank+'</div>';
+    d.innerHTML = '<div class="lab">掀牌核验 · 声明 '+G._reveal.cards.length+'张'+G._reveal.rank+'</div>';
     box.appendChild(d);
     const row = document.createElement('div'); row.className='reveal-row';
     for(const c of G._reveal.cards){ const e=cardEl(c); e.style.width='12vw'; e.style.maxWidth='52px'; row.appendChild(e); }
@@ -644,10 +644,14 @@ function renderHand(){
 
 function renderActions(){
   const box = $('actions'); box.innerHTML='';
-  if(G.phase==='over'){ box.innerHTML='<div class="hint">本局结束</div>'; return; }
-  if(G.busy || uiMode==='waiting'){ box.innerHTML='<div class="hint">'+G.players[G.turn].name+' 思考中…</div>'; return; }
   const me = G.players[0];
-  if(G.turn!==0){ box.innerHTML='<div class="hint">等待对手…</div>'; return; }
+  const isMyTurn = !G.busy && G.turn===0 && uiMode!=='waiting';
+  const disabled = !isMyTurn;
+  if(G.phase==='over'){ box.innerHTML='<div class="hint">本局结束</div>'; return; }
+  if(!isMyTurn){
+    const status = G.busy ? '核验中…' : (G.turn===0?'准备中':'等待 '+G.players[G.turn].name+'…');
+    const d=document.createElement('div'); d.className='hint'; d.textContent=status; box.appendChild(d);
+  }
 
   if(uiMode==='lead'){
     const div=document.createElement('div'); div.className='turn-tag'; div.textContent='轮到你叫牌：选择手牌并声明点数'; box.appendChild(div);
@@ -667,8 +671,9 @@ function renderActions(){
     box.appendChild(hint);
     const row=document.createElement('div'); row.className='act-row';
     const ok=document.createElement('button'); ok.className='btn'; ok.textContent='出 牌';
-    ok.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK && pendingRank);
+    ok.disabled = disabled || !(selCount>=1 && selCount<=MAX_PER_RANK && pendingRank);
     ok.addEventListener('click',()=>{
+      if(disabled) return;
       const cards = me.hand.filter(c=>selected.has(c.id));
       doLead(0, cards, pendingRank);
     });
@@ -685,21 +690,23 @@ function renderActions(){
     const row=document.createElement('div'); row.className='act-row';
 
     const bFollow=document.createElement('button'); bFollow.className='btn'; bFollow.textContent='跟牌(同点)';
-    bFollow.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK);
-    bFollow.addEventListener('click',()=>{ const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,cur.rank); });
+    bFollow.disabled = disabled || !(selCount>=1 && selCount<=MAX_PER_RANK);
+    bFollow.addEventListener('click',()=>{ if(disabled) return; const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,cur.rank); });
     row.appendChild(bFollow);
 
     if(G.options.upgrade){
       const bUp=document.createElement('button'); bUp.className='btn dark'; bUp.textContent='升级';
-      bUp.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK);
-      bUp.addEventListener('click',()=>{ uiMode='upgrade'; pendingRank=null; renderActions(); });
+      bUp.disabled = disabled || !(selCount>=1 && selCount<=MAX_PER_RANK);
+      bUp.addEventListener('click',()=>{ if(disabled) return; uiMode='upgrade'; pendingRank=null; renderActions(); });
       row.appendChild(bUp);
     }
     const bCh=document.createElement('button'); bCh.className='btn red'; bCh.textContent='掀牌';
-    bCh.addEventListener('click',()=>{ if(confirm('掀牌质疑 '+G.players[G.lastPlayer].name+' ？')) doChallenge(0); });
+    bCh.disabled = disabled;
+    bCh.addEventListener('click',()=>{ if(disabled) return; if(confirm('掀牌质疑 '+G.players[G.lastPlayer].name+' ？')) doChallenge(0); });
     row.appendChild(bCh);
     const bPass=document.createElement('button'); bPass.className='btn ghost'; bPass.textContent='过牌';
-    bPass.addEventListener('click',()=>{ doPass(0); });
+    bPass.disabled = disabled;
+    bPass.addEventListener('click',()=>{ if(disabled) return; doPass(0); });
     row.appendChild(bPass);
     box.appendChild(row);
     const hint=document.createElement('div'); hint.className='hint'; hint.style.marginTop='6px';
@@ -722,8 +729,8 @@ function renderActions(){
         if(selCount > cur.count) valid = true;
         else if(selCount === cur.count && rankIdx(r) > rankIdx(cur.rank)) valid = true;
       }
-      b.disabled = !valid;
-      b.addEventListener('click',()=>{ pendingRank=(pendingRank===r?null:r); renderActions(); });
+      b.disabled = disabled || !valid;
+      b.addEventListener('click',()=>{ if(disabled) return; pendingRank=(pendingRank===r?null:r); renderActions(); });
       rb.appendChild(b);
     }
     box.appendChild(rb);
@@ -732,11 +739,12 @@ function renderActions(){
     box.appendChild(hint);
     const row=document.createElement('div'); row.className='act-row';
     const ok=document.createElement('button'); ok.className='btn'; ok.textContent='确认升级';
-    ok.disabled = !pendingRank;
-    ok.addEventListener('click',()=>{ const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,pendingRank); });
+    ok.disabled = disabled || !pendingRank;
+    ok.addEventListener('click',()=>{ if(disabled) return; const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,pendingRank); });
     row.appendChild(ok);
     const back=document.createElement('button'); back.className='btn ghost'; back.textContent='返回';
-    back.addEventListener('click',()=>{ uiMode='follow'; pendingRank=null; renderActions(); });
+    back.disabled = disabled;
+    back.addEventListener('click',()=>{ if(disabled) return; uiMode='follow'; pendingRank=null; renderActions(); });
     row.appendChild(back);
     box.appendChild(row);
     return;
