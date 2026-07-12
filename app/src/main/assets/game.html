@@ -63,6 +63,7 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #rankbar { height: 30px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 4px; }
 #rankbar button { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3vw; font-weight: 800; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
+#rankbar button.disabled { opacity: 0.3; cursor: not-allowed; }
 #actRow { display: flex; gap: 8px; margin-bottom: 4px; }
 #actRow .btn { font-size: 3.8vw; padding: 8px 0; flex: 1; }
 #actRow .btn.disabled { opacity: 0.4; cursor: not-allowed; }
@@ -237,9 +238,14 @@ function renderActions(){
     return;
   }
 
-  const ranks = isLead || opts.upgrade ? RANKS : [G.lastDecl.rank];
+  const ranks = RANKS;
   const selectedRank = rankbar.querySelector('.on')?.textContent || (!isLead ? G.lastDecl.rank : null);
-  rankbar.innerHTML = ranks.map(r=>`<button ${r===selectedRank?'class="on"':''} onclick="selectRank('${r}')">${r}</button>`).join('');
+  rankbar.innerHTML = ranks.map(r=>{
+    const isCurrent = !isLead && r === G.lastDecl.rank;
+    const isSelected = r === selectedRank;
+    const isClickable = isLead || isCurrent;
+    return `<button ${isSelected?'class="on"':''} ${!isClickable?'class="disabled"':''} ${isClickable?'onclick="selectRank(\''+r+'\')"':''}>${r}</button>`;
+  }).join('');
 
   const btnText = isLead ? '叫牌' : '跟牌';
   const hasSelectedCards = $('hand').querySelectorAll('.hcard.sel').length > 0;
