@@ -100,7 +100,7 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 </div>
 
 <script>
-const RANKS = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const SUITS = ['♠','♥','♦','♣'];
 let cid = 0;
 
@@ -144,8 +144,8 @@ function exitGame(){
 
 function sortPlayerHand(){
   G.players[0].hand.sort((a,b)=>{
-    const ra = RANKS.indexOf(a.isJoker?'2':a.rank);
-    const rb = RANKS.indexOf(b.isJoker?'2':b.rank);
+    const ra = a.isJoker ? (a.rank==='JR' ? 14 : 13) : RANKS.indexOf(a.rank);
+    const rb = b.isJoker ? (b.rank==='JR' ? 14 : 13) : RANKS.indexOf(b.rank);
     if(ra!==rb) return ra-rb;
     return a.color.localeCompare(b.color);
   });
@@ -377,15 +377,16 @@ function nextTurn(){
 function aiTurn(){
   const p = G.players[G.turn];
   if(p.hand.length===0) return;
+  const revealChance = Math.random();
   if(isLastHandFinisher()){
-    if(Math.random()<0.5){
+    if(Math.random()<revealChance){
       actionReveal();
     } else {
       actionPass();
     }
     return;
   }
-  if(G.table.length>0 && Math.random()<0.5){
+  if(G.table.length>0 && Math.random()<revealChance){
     actionReveal(); return;
   }
   const rank = G.lastDecl.count>0 && !opts.upgrade ? G.lastDecl.rank : RANKS[Math.floor(Math.random()*RANKS.length)];
