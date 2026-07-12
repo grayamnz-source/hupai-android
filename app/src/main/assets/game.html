@@ -269,6 +269,11 @@ function revealLast(){
   const actual = last.cards.filter(c=>c.isJoker || c.rank===last.declaredRank).length;
   const isTruth = actual===last.cards.length;
   
+  const fakeCards = last.cards.filter(c=>!c.isJoker && c.rank!==last.declaredRank);
+  const fakeCounts = {};
+  fakeCards.forEach(c=>{ fakeCounts[c.rank] = (fakeCounts[c.rank]||0)+1; });
+  const fakeText = Object.entries(fakeCounts).map(([r,c])=>`${c}张${r}`).join('、');
+  
   revealedCards = last.cards;
   renderTable();
   
@@ -284,7 +289,7 @@ function revealLast(){
   } else {
     loser = last.player;
     nextStarter = G.turn;
-    addLog(`<b class="red">有假 ✓</b> ${G.players[last.player].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
+    addLog(`<b class="red">有假 ✓</b> (${fakeText}) ${G.players[last.player].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
   }
   G.players[loser].hand.push(...allCards);
   if(loser===0) sortPlayerHand();
