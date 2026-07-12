@@ -19,7 +19,8 @@
   .screen[hidden] { display: none !important; }
 
   /* ---------- Start screen ---------- */
-  #startScreen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; overflow-y: auto; padding: max(env(safe-area-inset-top),20px) 16px max(env(safe-area-inset-bottom),30px); }
+  #startScreen { z-index: 10; }
+  #startScreen .btn, #startScreen .link, #startScreen .switch, #startScreen .seg button { z-index: 20; position: relative; }
   .logo { font-size: 15vw; font-weight: 900; letter-spacing: 4px;
     background: linear-gradient(180deg,#f6e7a8,#d4af37 60%,#a9842b);
     -webkit-background-clip: text; background-clip: text; color: transparent;
