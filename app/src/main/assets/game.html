@@ -9,10 +9,10 @@
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
 body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #app { position: relative; width: 100%; height: 100%; }
-.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; padding: max(env(safe-area-inset-top),20px) 16px max(env(safe-area-inset-bottom),30px); }
+.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
 .screen[hidden] { display: none !important; }
 
-#startScreen { align-items: center; justify-content: center; gap: 20px; background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
+#startScreen { align-items: center; justify-content: center; gap: 20px; padding: max(env(safe-area-inset-top),20px) 16px max(env(safe-area-inset-bottom),30px); background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
 .logo { font-size: 15vw; font-weight: 900; color: #d4af37; letter-spacing: 4px; }
 .subtitle { font-size: 5vw; color: #9fb6a6; }
 .panel { width: 100%; max-width: 360px; background: rgba(0,0,0,.3); border-radius: 16px; padding: 20px; }
@@ -36,24 +36,27 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
 .opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
 .opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 0 0 22vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
+#table { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; min-height: 0; }
 .decl-box { text-align: center; }
 .decl-box .val { font-size: 8vw; font-weight: 900; color: #f0d378; }
 .pile { display: flex; gap: 4px; margin-top: 8px; }
 .face-down { width: 32px; height: 45px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
-#log { flex-shrink: 0; height: 36px; text-align: center; font-size: 3.2vw; color: #cdbf99; padding: 4px; }
-#hand { flex-shrink: 0; height: 80px; padding: 4px; overflow-x: auto; display: flex; gap: -4px; }
+#hand { flex-shrink: 0; height: 80px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
 .hcard { width: 44px; height: 76px; border-radius: 5px; background: #fff; color: #222; margin-left: -14px; position: relative; flex-shrink: 0; }
 .hcard:first-child { margin-left: 0; }
-.hcard.sel { transform: translateY(-10px); }
+.hcard.sel { transform: translateY(-10px); box-shadow: 0 4px 12px rgba(240,211,120,.4); }
 .hcard .tl { position: absolute; top: 2px; left: 3px; font-size: 2.8vw; font-weight: 800; }
 .hcard.red { color: #d33; }
-#actions { flex-shrink: 0; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: linear-gradient(to top, #062018 90%, rgba(6,32,24,.9)); }
-.act-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.act-row .btn { font-size: 4vw; padding: 10px 0; }
-.rankbar { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-.rankbar button { width: 10vw; padding: 6px 0; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.6vw; font-weight: 800; }
-.rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
+#bottomBar { flex-shrink: 0; background: linear-gradient(to top, #062018, rgba(6,32,24,.9)); padding: 8px 10px max(env(safe-area-inset-bottom),12px); }
+#rankbar { height: 36px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 8px; }
+#rankbar button { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.2vw; font-weight: 800; }
+#rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
+#actRow { display: flex; gap: 8px; margin-bottom: 8px; }
+#actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
+#logPanel { max-height: 60px; overflow-y: auto; padding: 4px 8px; background: rgba(0,0,0,.2); border-radius: 8px; }
+#logPanel .log-item { font-size: 2.8vw; color: #cdbf99; line-height: 1.4; white-space: nowrap; }
+#logPanel .log-item b { color: #f0d378; }
+#logPanel .log-item .red { color: #e87f77; }
 .hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
 </style>
 </head>
@@ -86,20 +89,22 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
   <div id="gameScreen" class="screen" hidden>
     <div id="opponents"></div>
     <div id="table"><div class="decl-box"><div class="val">等待叫牌</div></div><div class="pile"></div></div>
-    <div id="log">新局开始</div>
     <div id="hand"></div>
-    <div id="actions"></div>
+    <div id="bottomBar">
+      <div id="rankbar"></div>
+      <div id="actRow"></div>
+      <div id="logPanel"></div>
+    </div>
   </div>
 </div>
 
 <script>
 const RANKS = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
-const SUITS = ['♠','♥','♦','♣'];
 let cid = 0;
 
 function makeDeck(){
   const d = [];
-  for(const r of RANKS) for(const s of SUITS) d.push({id: cid++, rank:r, suit:s, isJoker:false, color:(s==='♥'||s==='♦')?'red':'black'});
+  for(const r of RANKS) for(const s of ['♠','♥','♦','♣']) d.push({id: cid++, rank:r, suit:s, isJoker:false, color:(s==='♥'||s==='♦')?'red':'black'});
   d.push({id: cid++, rank:'JB', isJoker:true, color:'black', label:'小王'});
   d.push({id: cid++, rank:'JR', isJoker:true, color:'red', label:'大王'});
   return d;
@@ -131,6 +136,8 @@ bindSwitch('swTolerance','tolerance');
 bindSwitch('swVerify','verifyWin');
 
 let G = {};
+let logHistory = [];
+
 function newGame(cfg){
   G = { players:[{name:'你', hand:[], isAI:false},{name:'电脑·甲', hand:[], isAI:true},{name:'电脑·乙', hand:[], isAI:true}],
     table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:cfg, busy:false, passCount:0, wrongReveal:0 };
@@ -139,6 +146,7 @@ function newGame(cfg){
   const per = Math.floor(deck.length / G.players.length);
   G.players.forEach((p,i)=>{ p.hand = deck.slice(i*per, (i+1)*per); });
   G.players[0].hand.sort((a,b)=>RANKS.indexOf(a.isJoker?'2':a.rank)-RANKS.indexOf(b.isJoker?'2':b.rank));
+  logHistory = ['新局开始'];
   render();
 }
 
@@ -147,6 +155,7 @@ function render(){
   renderTable();
   renderHand();
   renderActions();
+  renderLog();
 }
 
 function renderOpponents(){
@@ -168,22 +177,32 @@ function renderHand(){
 }
 
 function renderActions(){
-  const el = $('actions');
+  const rankbar = $('rankbar');
+  const actRow = $('actRow');
   const isMyTurn = G.turn===0 && !G.busy;
+  const isLead = G.lastDecl.count===0;
+
   if(!isMyTurn){
-    el.innerHTML = `<div class="hint">等待 ${G.players[G.turn].name} 操作…</div>`;
+    rankbar.innerHTML = '';
+    actRow.innerHTML = `<div class="hint">等待 ${G.players[G.turn].name} 操作…</div>`;
     setTimeout(()=>{ if(G.turn>0 && !G.busy) aiTurn(); }, 800);
     return;
   }
-  const ranks = G.lastDecl.count>0 && !opts.upgrade ? [G.lastDecl.rank] : RANKS;
-  el.innerHTML = `<div class="rankbar">${ranks.map(r=>`<button ${G.lastDecl.rank===r?'class="on"':''} onclick="selectRank('${r}')">${r}</button>`).join('')}</div>
-    <div class="act-row"><button class="btn" onclick="actionFollow()">跟牌</button><button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button></div>`;
+
+  const ranks = isLead || opts.upgrade ? RANKS : [G.lastDecl.rank];
+  const selectedRank = rankbar.querySelector('.on')?.textContent || (isLead ? '3' : G.lastDecl.rank);
+  rankbar.innerHTML = ranks.map(r=>`<button ${r===selectedRank?'class="on"':''} onclick="selectRank('${r}')">${r}</button>`).join('');
+
+  const btnText = isLead ? '叫牌' : '跟牌';
+  actRow.innerHTML = `<button class="btn" onclick="actionFollow()">${btnText}</button><button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
 }
 
-function selectRank(r){ $('actions').querySelectorAll('.rankbar button').forEach(b=>b.classList.toggle('on',b.textContent===r)); }
+function selectRank(r){
+  $('rankbar').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.textContent===r));
+}
 
 function actionFollow(){
-  const rank = $('actions').querySelector('.rankbar button.on')?.textContent;
+  const rank = $('rankbar').querySelector('.on')?.textContent;
   if(!rank) return;
   const selected = Array.from($('hand').querySelectorAll('.hcard.sel')).map(h=>parseInt(h.dataset.i));
   if(selected.length===0) return;
@@ -197,6 +216,7 @@ function actionReveal(){
 
 function actionPass(){
   G.passCount++;
+  addLog(`${G.players[G.turn].name} 过牌`);
   nextTurn();
 }
 
@@ -206,7 +226,8 @@ function playCards(indices, declaredRank){
   G.table.push({player:G.turn, cards:cards, declaredRank:declaredRank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:declaredRank};
   G.passCount = 0;
-  $('log').textContent = `${G.players[G.turn].name} 跟牌: ${cards.length}张${declaredRank}`;
+  const action = G.lastDecl.count===cards.length && !G.table.slice(0,-1).length ? '叫牌' : '跟牌';
+  addLog(`${G.players[G.turn].name} ${action}: ${cards.length}张${declaredRank}`);
   nextTurn();
 }
 
@@ -215,7 +236,7 @@ function revealLast(){
   const last = G.table[G.table.length-1];
   const actual = last.cards.filter(c=>c.isJoker || c.rank===last.declaredRank).length;
   const isTruth = actual===last.cards.length;
-  $('log').textContent = isTruth ? '属实 ✓ 掀牌者收回' : '有假 ✓ 被质疑者收回';
+  addLog(isTruth ? `<b>属实 ✓</b> 掀牌者收回` : `<b class="red">有假 ✓</b> 被质疑者收回`);
   const allCards = [];
   G.table.forEach(b=>allCards.push(...b.cards));
   G.table = [];
@@ -227,8 +248,8 @@ function revealLast(){
 }
 
 function nextTurn(){
-  if(G.players[0].hand.length===0){ $('log').textContent = '你赢了！'; return; }
-  if(G.passCount >= G.players.length-1){ G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; }
+  if(G.players[0].hand.length===0){ addLog('你赢了！'); return; }
+  if(G.passCount >= G.players.length-1){ G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; addLog('连续过牌，桌面牌淘汰'); }
   do { G.turn = (G.turn+1) % G.players.length; } while(G.turn>0 && G.players[G.turn].hand.length===0);
   render();
 }
@@ -248,7 +269,21 @@ function aiTurn(){
   G.table.push({player:G.turn, cards:cards, declaredRank:rank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:rank};
   G.passCount = 0;
+  const action = G.lastDecl.count===cards.length && !G.table.slice(0,-1).length ? '叫牌' : '跟牌';
+  addLog(`${p.name} ${action}: ${cards.length}张${rank}`);
   nextTurn();
+}
+
+function addLog(msg){
+  logHistory.push(msg);
+  if(logHistory.length>8) logHistory.shift();
+  renderLog();
+}
+
+function renderLog(){
+  const el = $('logPanel');
+  el.innerHTML = logHistory.map(l=>`<div class="log-item">${l}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
 }
 
 function startGameNow(){
