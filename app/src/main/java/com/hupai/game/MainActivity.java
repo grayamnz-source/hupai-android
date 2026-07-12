@@ -41,6 +41,11 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setGeolocationEnabled(true);
 
         WebView.setWebContentsDebuggingEnabled(false);
         webView.setWebViewClient(new WebViewClient());
