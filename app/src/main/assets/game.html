@@ -65,6 +65,7 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
 #actRow { display: flex; gap: 8px; margin-bottom: 4px; }
 #actRow .btn { font-size: 3.8vw; padding: 8px 0; flex: 1; }
+#actRow .btn.disabled { opacity: 0.4; cursor: not-allowed; }
 #ctrlRow { display: flex; gap: 8px; }
 #newGameBtn { flex: 1; padding: 8px; font-size: 3.4vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
 #newGameBtn:active { background: rgba(212,175,55,.2); }
@@ -196,7 +197,7 @@ function renderHand(){
     if(c.isJoker) return `<div class="hcard jk ${c.color}" data-i="${i}"><div class="top">${c.label}</div><div class="bot">🃏</div></div>`;
     return `<div class="hcard ${c.color}" data-i="${i}"><div class="top">${c.rank}</div><div class="bot">${c.suit}</div></div>`;
   }).join('');
-  el.querySelectorAll('.hcard').forEach(h=>{ h.addEventListener('click',()=>h.classList.toggle('sel')); });
+  el.querySelectorAll('.hcard').forEach(h=>{ h.addEventListener('click',()=>{ h.classList.toggle('sel'); if(G.turn===0) renderActions(); }); });
 }
 
 function isLastHandFinisher(){
@@ -241,11 +242,15 @@ function renderActions(){
   rankbar.innerHTML = ranks.map(r=>`<button ${r===selectedRank?'class="on"':''} onclick="selectRank('${r}')">${r}</button>`).join('');
 
   const btnText = isLead ? '叫牌' : '跟牌';
-  actRow.innerHTML = `<button class="btn" onclick="actionFollow()">${btnText}</button><button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
+  const hasSelectedCards = $('hand').querySelectorAll('.hcard.sel').length > 0;
+  const hasSelectedRank = rankbar.querySelector('.on')?.textContent;
+  const canCall = hasSelectedCards && hasSelectedRank;
+  actRow.innerHTML = `<button class="btn ${canCall?'':'disabled'}" onclick="${canCall?'actionFollow()':''}">${btnText}</button><button class="btn" onclick="actionReveal()">掀牌</button><button class="btn" onclick="actionPass()">过牌</button>`;
 }
 
 function selectRank(r){
   $('rankbar').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.textContent===r));
+  if(G.turn===0) renderActions();
 }
 
 function actionFollow(){
