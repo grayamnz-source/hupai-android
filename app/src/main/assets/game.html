@@ -32,21 +32,21 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .link { background: none; border: none; color: #d8c896; font-size: 3.8vw; text-decoration: underline; cursor: pointer; margin-top: 8px; }
 
 #gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
-#opponents { display: flex; justify-content: center; gap: 10px; padding: max(env(safe-area-inset-top),10px) 10px 4px; flex-shrink: 0; }
-.opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
-.opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
-.opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 0 0 20vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
+#opponents { display: flex; justify-content: center; gap: 10px; padding: max(env(safe-area-inset-top),6px) 10px 4px; flex-shrink: 0; }
+.opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 8px; text-align: center; }
+.opp .nm { font-size: 3.4vw; color: #ede2c4; font-weight: 700; }
+.opp .cnt { font-size: 4vw; color: #f0d378; font-weight: 900; }
+#table { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; min-height: 0; }
 .decl-box { text-align: center; }
-.decl-box .val { font-size: 6.5vw; font-weight: 900; color: #f0d378; }
-.pile { display: flex; gap: 6px; margin-top: 8px; }
-.face-down { width: 46px; height: 64px; border-radius: 6px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
+.decl-box .val { font-size: 6vw; font-weight: 900; color: #f0d378; }
+.pile { display: flex; gap: 8px; margin-top: 8px; }
+.face-down { width: 52px; height: 72px; border-radius: 7px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
 .revealed { display: flex; gap: 8px; margin-top: 8px; }
-.rcard { width: 46px; height: 64px; border-radius: 6px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; position: relative; font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,.25); }
+.rcard { width: 52px; height: 72px; border-radius: 7px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; position: relative; font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,.25); }
 .rcard.red { color: #d33; }
-.rcard .tl { position: absolute; top: 3px; left: 3px; font-size: 3.8vw; line-height: 1; }
-.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5.5vw; }
-#hand { flex-shrink: 0; height: 100px; padding: 16px 4px 4px; overflow-x: auto; overflow-y: visible; display: flex; gap: 0; }
+.rcard .tl { position: absolute; top: 3px; left: 3px; font-size: 3.4vw; line-height: 1; }
+.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5vw; }
+#hand { flex: 0 0 16%; min-height: 90px; padding: 14px 4px 4px; overflow-x: auto; overflow-y: visible; display: flex; gap: 0; }
 .hcard { width: 46px; height: 82px; border-radius: 6px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; margin-left: -12px; position: relative; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,.25); border: 1px solid rgba(0,0,0,.08); }
 .hcard:first-child { margin-left: 0; }
 .hcard.sel { transform: translateY(-14px); box-shadow: 0 6px 14px rgba(240,211,120,.5); z-index: 10; }
@@ -54,22 +54,24 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .hcard .bot { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 4.8vw; line-height: 1; }
 .hcard.red { color: #d33; }
 .hcard.jk { background: linear-gradient(160deg,#fff,#f0e6cf); }
-#actionBar { flex-shrink: 0; padding: 6px 10px; }
-#rankbar { height: 34px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 6px; }
-#rankbar button { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.2vw; font-weight: 800; }
+#bottomFixed { flex-shrink: 0; display: flex; flex-direction: column; height: 58vh; min-height: 420px; max-height: 520px; background: rgba(0,0,0,.15); border-top: 1px solid rgba(212,175,55,.15); }
+#hand { flex: 0 0 22%; min-height: 100px; padding: 16px 4px 4px; overflow-x: auto; overflow-y: visible; display: flex; gap: 0; }
+#actionBar { flex: 0 0 auto; padding: 6px 10px; }
+#rankbar { height: 30px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 4px; }
+#rankbar button { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3vw; font-weight: 800; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
-#actRow { display: flex; gap: 8px; margin-bottom: 6px; }
-#actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
+#actRow { display: flex; gap: 8px; margin-bottom: 4px; }
+#actRow .btn { font-size: 3.8vw; padding: 8px 0; flex: 1; }
 #ctrlRow { display: flex; gap: 8px; }
-#newGameBtn { flex: 1; padding: 10px; font-size: 3.6vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
+#newGameBtn { flex: 1; padding: 8px; font-size: 3.4vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
 #newGameBtn:active { background: rgba(212,175,55,.2); }
-#exitBtn { flex: 1; padding: 10px; font-size: 3.6vw; font-weight: 800; color: #e87f77; background: rgba(0,0,0,.3); border: 1px solid rgba(222,85,77,.3); border-radius: 8px; cursor: pointer; }
+#exitBtn { flex: 1; padding: 8px; font-size: 3.4vw; font-weight: 800; color: #e87f77; background: rgba(0,0,0,.3); border: 1px solid rgba(222,85,77,.3); border-radius: 8px; cursor: pointer; }
 #exitBtn:active { background: rgba(222,85,77,.2); }
-#logPanel { flex: 0 0 18vh; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
-#logPanel .log-item { font-size: 3.2vw; color: #cdbf99; line-height: 1.4; padding: 2px 0; }
+#logPanel { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px max(env(safe-area-inset-bottom),10px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
+#logPanel .log-item { font-size: 3vw; color: #cdbf99; line-height: 1.4; padding: 2px 0; }
 #logPanel .log-item b { color: #f0d378; }
 #logPanel .log-item .red { color: #e87f77; }
-.hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
+.hint { font-size: 3vw; color: #9fb6a6; text-align: center; margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -77,16 +79,18 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
   <div id="gameScreen" class="screen">
     <div id="opponents"></div>
     <div id="table"><div class="decl-box"><div class="val">等待叫牌</div></div><div class="pile"></div></div>
-    <div id="hand"></div>
-    <div id="actionBar">
-      <div id="rankbar"></div>
-      <div id="actRow"></div>
-      <div id="ctrlRow">
-        <button id="newGameBtn" onclick="restartGame()">重新开始游戏</button>
-        <button id="exitBtn" onclick="exitGame()">退出游戏</button>
+    <div id="bottomFixed">
+      <div id="hand"></div>
+      <div id="actionBar">
+        <div id="rankbar"></div>
+        <div id="actRow"></div>
+        <div id="ctrlRow">
+          <button id="newGameBtn" onclick="restartGame()">重新开始游戏</button>
+          <button id="exitBtn" onclick="exitGame()">退出游戏</button>
+        </div>
       </div>
+      <div id="logPanel"></div>
     </div>
-    <div id="logPanel"></div>
   </div>
 </div>
 
@@ -266,14 +270,16 @@ function revealLast(){
   G.table = [];
   
   let loser, nextStarter;
+  const revealer = G.turn;
+  const wasRevealed = last.player;
   if(isTruth){
-    loser = G.turn;
-    nextStarter = G.turn;
-    addLog(`<b>属实 ✓</b> ${G.players[G.turn].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
+    loser = revealer;
+    nextStarter = wasRevealed;
+    addLog(`<b>属实 ✓</b> 掀牌玩家 ${G.players[revealer].name} 收回 ${allCards.length}张牌，被掀牌玩家 ${G.players[nextStarter].name} 开下轮`);
   } else {
-    loser = last.player;
-    nextStarter = G.turn;
-    addLog(`<b class="red">有假 ✓</b> (${fakeText}) ${G.players[last.player].name} 收回 ${allCards.length}张牌，${G.players[nextStarter].name} 开下轮`);
+    loser = wasRevealed;
+    nextStarter = revealer;
+    addLog(`<b class="red">有假 ✓</b> (${fakeText}) 被掀牌玩家 ${G.players[loser].name} 收回 ${allCards.length}张牌，掀牌玩家 ${G.players[nextStarter].name} 开下轮`);
   }
   G.players[loser].hand.push(...allCards);
   if(loser===0) sortPlayerHand();
