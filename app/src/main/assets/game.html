@@ -10,7 +10,7 @@
   body {
     background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%);
     color: #f4ecd8;
-    touch-action: none;
+    touch-action: manipulation;
   }
   #app { position: relative; width: 100%; height: 100%; }
 
@@ -772,34 +772,53 @@ function showOver(wi){
 /* ===================== 启动界面交互 ===================== */
 const opts = { nplayers:3, upgrade:false, tolerance:true, verifyWin:true };
 
-function bindSeg(id, key, parse){
-  const seg = $(id);
-  seg.querySelectorAll('button').forEach(b=>{
-    b.addEventListener('click',()=>{
-      seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');
-      opts[key] = parse(b.dataset.v);
+function onReady(){
+  function bindSeg(id, key, parse){
+    const seg = $(id);
+    seg.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        opts[key] = parse(b.dataset.v);
+      });
+      b.addEventListener('touchstart',(e)=>{ e.preventDefault(); b.click(); });
     });
-  });
-}
-bindSeg('segPlayers','nplayers', v=>parseInt(v));
-function bindSwitch(id, key){
-  const sw=$(id);
-  sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
-}
-bindSwitch('swUpgrade','upgrade');
-bindSwitch('swTolerance','tolerance');
-bindSwitch('swVerify','verifyWin');
+  }
+  bindSeg('segPlayers','nplayers', v=>parseInt(v));
+  function bindSwitch(id, key){
+    const sw=$(id);
+    sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
+    sw.addEventListener('touchstart',(e)=>{ e.preventDefault(); sw.click(); });
+  }
+  bindSwitch('swUpgrade','upgrade');
+  bindSwitch('swTolerance','tolerance');
+  bindSwitch('swVerify','verifyWin');
 
-$('btnStart').addEventListener('click', ()=>{
-  $('startScreen').hidden=true;
-  $('gameScreen').hidden=false;
-  newGame(Object.assign({}, opts));
-});
-$('btnRules').addEventListener('click', ()=>{ $('startScreen').hidden=true; $('rulesScreen').hidden=false; });
-$('btnRulesBack').addEventListener('click', ()=>{ $('rulesScreen').hidden=true; $('startScreen').hidden=false; });
-$('btnAgain').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('gameScreen').hidden=false; newGame(Object.assign({},opts)); });
-$('btnHome').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('startScreen').hidden=false; });
+  $('btnStart').addEventListener('click', ()=>{
+    $('startScreen').hidden=true;
+    $('gameScreen').hidden=false;
+    newGame(Object.assign({}, opts));
+  });
+  $('btnStart').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnStart').click(); });
+
+  $('btnRules').addEventListener('click', ()=>{ $('startScreen').hidden=true; $('rulesScreen').hidden=false; });
+  $('btnRules').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnRules').click(); });
+
+  $('btnRulesBack').addEventListener('click', ()=>{ $('rulesScreen').hidden=true; $('startScreen').hidden=false; });
+  $('btnRulesBack').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnRulesBack').click(); });
+
+  $('btnAgain').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('gameScreen').hidden=false; newGame(Object.assign({},opts)); });
+  $('btnAgain').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnAgain').click(); });
+
+  $('btnHome').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('startScreen').hidden=false; });
+  $('btnHome').addEventListener('touchstart',(e)=>{ e.preventDefault(); $('btnHome').click(); });
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', onReady);
+}else{
+  onReady();
+}
 </script>
 </body>
 </html>
