@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>唬牌</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%);
+    color: #f4ecd8;
+    touch-action: manipulation;
+  }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+  /* ---------- Screens ---------- */
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: max(env(safe-area-inset-top),16px) 16px max(env(safe-area-inset-bottom),16px); }
+  .screen[hidden] { display: none; }
+
+  /* ---------- Start screen ---------- */
+  #startScreen { align-items: center; justify-content: center; gap: 18px; overflow-y: auto; }
+  .logo { font-size: 15vw; font-weight: 900; letter-spacing: 4px;
+    background: linear-gradient(180deg,#f6e7a8,#d4af37 60%,#a9842b);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 4px 18px rgba(0,0,0,.4); line-height: 1; }
+  .subtitle { font-size: 4.6vw; color: #d8c896; letter-spacing: 6px; margin-top: -6px; }
+  .card-deco { display: flex; gap: 6px; margin: 6px 0 4px; }
+  .card-deco .mini { width: 9vw; height: 12.6vw; border-radius: 6px; background: #fafafa; color: #c0392b;
+    font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 5vw;
+    box-shadow: 0 6px 14px rgba(0,0,0,.4); transform: rotate(-6deg); }
+  .card-deco .mini:nth-child(2){ transform: rotate(4deg); color:#222; }
+  .card-deco .mini:nth-child(3){ transform: rotate(-2deg); }
+
+  .panel { width: min(92vw, 460px); background: rgba(0,0,0,.32); border: 1px solid rgba(212,175,55,.35);
+    border-radius: 16px; padding: 14px 16px; backdrop-filter: blur(4px); }
+  .opt-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .opt-row:last-child { border-bottom: none; }
+  .opt-label { font-size: 4.2vw; color: #ede2c4; }
+  .opt-desc { font-size: 3.2vw; color: #9fb6a6; margin-top: 2px; }
+  .seg { display: flex; background: rgba(0,0,0,.4); border-radius: 10px; padding: 3px; }
+  .seg button { border: none; background: transparent; color: #cdbf99; font-size: 3.8vw; padding: 7px 14px; border-radius: 8px; font-weight: 700; }
+  .seg button.on { background: linear-gradient(180deg,#e8c468,#c9962a); color: #2a1c05; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .switch { width: 48px; height: 28px; border-radius: 16px; background: rgba(255,255,255,.18); position: relative; transition: .2s; border: none; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: .2s; }
+  .switch.on { background: linear-gradient(90deg,#e8c468,#c9962a); }
+  .switch.on::after { left: 23px; }
+
+  .btn { border: none; border-radius: 12px; font-weight: 800; font-size: 5vw; padding: 14px 0; width: 100%;
+    background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  .btn.ghost { background: rgba(255,255,255,.08); color: #ede2c4; border: 1px solid rgba(212,175,55,.4); box-shadow: none; }
+  .btn.dark { background: linear-gradient(180deg,#3a4a55,#222d34); color: #e8e0cc; box-shadow: none; }
+  .btn.red { background: linear-gradient(180deg,#e0635a,#a8302a); color: #fff; }
+  .btn:active { transform: translateY(1px); }
+  .btn[disabled] { opacity: .4; }
+  .btn-sm { font-size: 4vw; padding: 11px 0; }
+  .link { background: none; border: none; color: #d8c896; font-size: 3.8vw; text-decoration: underline; }
+
+  /* ---------- Game screen ---------- */
+  #gameScreen { padding: 0; }
+  #opponents { display: flex; justify-content: center; gap: 10px; padding: max(env(safe-area-inset-top),8px) 10px 4px; flex-wrap: wrap; }
+  .opp { flex: 1 1 0; min-width: 90px; max-width: 150px; background: rgba(0,0,0,.32); border: 1px solid rgba(212,175,55,.28);
+    border-radius: 12px; padding: 8px 6px; text-align: center; position: relative; transition: .2s; }
+  .opp.active { border-color: #f0d378; box-shadow: 0 0 0 2px rgba(240,211,120,.35), 0 0 18px rgba(240,211,120,.25); background: rgba(60,45,15,.4); }
+  .opp .av { font-size: 7vw; line-height: 1; }
+  .opp .nm { font-size: 3.4vw; color: #ede2c4; margin-top: 2px; font-weight: 700; }
+  .opp .cnt { font-size: 3.1vw; color: #cdbf99; margin-top: 1px; }
+  .opp .cnt b { color: #f0d378; font-size: 4.4vw; }
+  .opp .stack { display: flex; justify-content: center; height: 16px; margin-top: 3px; }
+  .opp .stack i { width: 10px; height: 14px; border-radius: 2px; background: linear-gradient(135deg,#9e2b25,#6e1c18); border:1px solid #d4af37; margin-left: -7px; }
+  .opp .stack i:first-child { margin-left: 0; }
+  .opp .badge { position: absolute; top: -7px; right: -6px; background: #c0392b; color: #fff; font-size: 3vw; padding: 2px 6px; border-radius: 8px; font-weight: 700; }
+  .opp .think { font-size: 2.8vw; color: #f0d378; margin-top: 2px; min-height: 12px; }
+
+  #table { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 10px; min-height: 0; }
+  .decl-box { text-align: center; margin-bottom: 6px; }
+  .decl-box .lab { font-size: 3.2vw; color: #9fb6a6; letter-spacing: 2px; }
+  .decl-box .val { font-size: 8.5vw; font-weight: 900; color: #f0d378; text-shadow: 0 2px 10px rgba(0,0,0,.5); line-height: 1.1; }
+  .decl-box .val small { font-size: 4vw; color: #cdbf99; font-weight: 600; }
+  .pile { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 96vw; }
+  .pile .batch { position: relative; }
+  .pile .batch .tag { font-size: 2.7vw; color: #cdbf99; text-align: center; margin-bottom: 2px; }
+  .pile .batch .tag b { color: #f0d378; }
+  .pile .batch.latest .tag b { color: #fff; }
+  .face-down { width: 9.5vw; max-width: 44px; aspect-ratio: 5/7; border-radius: 5px;
+    background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px);
+    border: 1.5px solid #d4af37; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+  .face-down.stack2 { box-shadow: 2px 2px 0 #6e1c18, 0 2px 6px rgba(0,0,0,.4); }
+  .reveal-row { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+
+  .card { width: 9.5vw; max-width: 44px; aspect-ratio: 5/7; border-radius: 5px; background: #fafafa;
+    color: #222; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,.35); font-weight: 800; overflow: hidden; flex: none; }
+  .card.red { color: #d33; }
+  .card .tl, .card .br { position: absolute; font-size: 2.7vw; line-height: 1; text-align: center; }
+  .card .tl { top: 2px; left: 3px; }
+  .card .br { bottom: 2px; right: 3px; transform: rotate(180deg); }
+  .card .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5vw; }
+  .card.jk { background: linear-gradient(160deg,#fff,#f0e6cf); }
+  .card.jk .cs { font-size: 3vw; font-weight: 900; }
+
+  #log { height: 46px; overflow: hidden; padding: 4px 14px; font-size: 3.1vw; color: #cdbf99; text-align: center; line-height: 1.35; }
+  #log b { color: #f0d378; }
+  #log .red { color: #e87f77; }
+
+  #hand { padding: 4px 6px 2px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 0; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+  #hand .hcard { margin-left: -3.2vw; transition: transform .12s, margin .12s; }
+  #hand .hcard:first-child { margin-left: 0; }
+  #hand .hcard.sel { transform: translateY(-14px); box-shadow: 0 8px 14px rgba(240,211,120,.5); }
+  #hand .hcard .tl, #hand .hcard .br { font-size: 3vw; }
+  #hand .hcard .cs { font-size: 5.4vw; }
+  #hand .hcard.jk .cs { font-size: 3.2vw; }
+
+  #actions { padding: 6px 10px max(env(safe-area-inset-bottom),8px); }
+  .act-row { display: flex; gap: 8px; }
+  .act-row .btn { font-size: 4.3vw; padding: 12px 0; }
+  .rankbar { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 8px; }
+  .rankbar button { width: 11.5vw; max-width: 46px; padding: 8px 0; border-radius: 9px; border: 1px solid rgba(212,175,55,.4);
+    background: rgba(0,0,0,.35); color: #ede2c4; font-size: 4.2vw; font-weight: 800; }
+  .rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
+  .rankbar button[disabled] { opacity: .28; }
+  .hint { font-size: 3.3vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
+  .hint b { color: #f0d378; }
+  .turn-tag { font-size: 3.3vw; color: #f0d378; text-align: center; font-weight: 700; margin-bottom: 4px; }
+
+  /* ---------- Over screen ---------- */
+  #overScreen { align-items: center; justify-content: center; gap: 22px; text-align: center; }
+  #overScreen .ttl { font-size: 12vw; font-weight: 900; }
+  #overScreen .win { color: #f0d378; }
+  #overScreen .lose { color: #e87f77; }
+  #overScreen .sub { font-size: 4.4vw; color: #cdbf99; }
+
+  /* rules */
+  #rulesScreen { align-items: stretch; justify-content: flex-start; overflow-y: auto; }
+  #rulesScreen h2 { font-size: 6vw; color: #f0d378; text-align: center; margin: 4px 0 10px; }
+  #rulesScreen .rb { font-size: 3.5vw; line-height: 1.6; color: #ddd1ad; }
+  #rulesScreen .rb h3 { color: #f0d378; margin: 12px 0 4px; font-size: 4.2vw; }
+  #rulesScreen .rb p { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Start -->
+  <div id="startScreen" class="screen">
+    <div class="logo">唬牌</div>
+    <div class="subtitle">吹 · 牛 · 皮</div>
+    <div class="card-deco"><div class="mini">K</div><div class="mini">A</div><div class="mini">2</div></div>
+
+    <div class="panel">
+      <div class="opt-row">
+        <div><div class="opt-label">玩家人数</div><div class="opt-desc">你 + 电脑</div></div>
+        <div class="seg" id="segPlayers">
+          <button data-v="3" class="on">3人</button>
+          <button data-v="4">4人</button>
+        </div>
+      </div>
+      <div class="opt-row">
+        <div><div class="opt-label">升级跟牌</div><div class="opt-desc">跟牌可加注：更大点数或更多张</div></div>
+        <button class="switch" id="swUpgrade"></button>
+      </div>
+      <div class="opt-row">
+        <div><div class="opt-label">容错防刷</div><div class="opt-desc">连续3次掀错后自动过牌</div></div>
+        <button class="switch on" id="swTolerance"></button>
+      </div>
+      <div class="opt-row">
+        <div><div class="opt-label">胜利核验</div><div class="opt-desc">出完手牌需经核验才算赢</div></div>
+        <button class="switch on" id="swVerify"></button>
+      </div>
+    </div>
+
+    <button class="btn" id="btnStart">开 始 游 戏</button>
+    <button class="link" id="btnRules">查看完整规则</button>
+  </div>
+
+  <!-- Game -->
+  <div id="gameScreen" class="screen" hidden>
+    <div id="opponents"></div>
+    <div id="table"></div>
+    <div id="log"></div>
+    <div id="hand"></div>
+    <div id="actions"></div>
+  </div>
+
+  <!-- Over -->
+  <div id="overScreen" class="screen" hidden>
+    <div class="ttl" id="overTtl"></div>
+    <div class="sub" id="overSub"></div>
+    <button class="btn" id="btnAgain">再 来 一 局</button>
+    <button class="btn ghost btn-sm" id="btnHome">返回首页</button>
+  </div>
+
+  <!-- Rules -->
+  <div id="rulesScreen" class="screen" hidden>
+    <h2>唬牌 · 规则</h2>
+    <div class="rb">
+      <h3>一、基础配置</h3>
+      <p>· 3~4 人游玩，1 副 54 张牌（含大小王）。</p>
+      <p>· 大小王可充当任意点数，用来凑数完成牌型声明（单副最多凑 6 张同点数）。</p>
+      <h3>二、核心流程</h3>
+      <p>· 首轮出牌者将牌背面朝上放置，公开声明数量与点数，如“3张K”，真假皆可。</p>
+      <p>· <b>跟牌</b>：追加相同点数的牌（数量不限，真假自定）。</p>
+      <p>· <b>掀牌</b>：质疑上家。翻开核验：完全属实→掀牌者收回桌面全部牌；含假牌→被质疑者收回。未收回者开下一轮。</p>
+      <p>· <b>过牌</b>：放弃本轮操作权，顺位传递。</p>
+      <p>· 连续多名玩家过牌，桌面牌直接作为淘汰牌收走，最后出牌者开下一轮。</p>
+      <h3>三、胜负</h3>
+      <p>· 最先出完手牌者获胜（开启“胜利核验”时，需经下家核验为真才算最终获胜）。</p>
+      <h3>四、可选规则</h3>
+      <p>· <b>升级跟牌</b>：跟牌时可加注，如同数量更大点数，或更多张数。</p>
+      <p>· <b>容错防刷</b>：连续 3 次掀牌判定上家为真后，后续掀牌自动判为过牌。</p>
+    </div>
+    <button class="btn btn-sm" id="btnRulesBack" style="margin-top:16px;">返 回</button>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+/* ===================== 常量与牌组 ===================== */
+const RANKS = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
+const rankIdx = r => RANKS.indexOf(r);
+const SUITS = ['♠','♥','♦','♣'];
+const MAX_PER_RANK = 6; // 单副：4基础+2王
+
+let cid = 0;
+function makeDeck(){
+  const d = [];
+  for(const r of RANKS) for(const s of SUITS){
+    d.push({id: cid++, rank:r, suit:s, isJoker:false, color:(s==='♥'||s==='♦')?'red':'black'});
+  }
+  d.push({id: cid++, rank:'JB', suit:null, isJoker:true, color:'black', label:'小王'});
+  d.push({id: cid++, rank:'JR', suit:null, isJoker:true, color:'red', label:'大王'});
+  return d;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function sortHand(h){
+  h.sort((x,y)=>{
+    if(x.isJoker!==y.isJoker) return x.isJoker?1:-1;
+    if(x.isJoker) return x.rank==='JB'?-1:1;
+    return rankIdx(x.rank)-rankIdx(y.rank);
+  });
+  return h;
+}
+function verifyBatch(cards, declaredRank){
+  return cards.every(c => c.isJoker || c.rank === declaredRank);
+}
+
+/* ===================== 状态 ===================== */
+let G = null;
+let selected = new Set(); // 选中的手牌 id
+let pendingRank = null;   // lead / upgrade 选定的点数
+let uiMode = 'lead';      // lead | follow | upgrade | waiting
+
+function newGame(opts){
+  const deck = shuffle(makeDeck());
+  const n = opts.nplayers;
+  const each = Math.floor(deck.length / n);
+  const hands = Array.from({length:n}, ()=>[]);
+  let idx=0;
+  for(let i=0;i<each;i++) for(let p=0;p<n;p++) hands[p].push(deck[idx++]);
+  // 余牌(4人时2张)弃置不用
+  const names = ['你','电脑·甲','电脑·乙','电脑·丙'];
+  const players = [];
+  for(let i=0;i<n;i++){
+    players.push({ name: names[i], isHuman: i===0, hand: sortHand(hands[i]), falseStreak:0, boldness: 0.4+Math.random()*0.5 });
+  }
+  const leader = Math.floor(Math.random()*n);
+  G = {
+    players, n,
+    table: [],          // {player, cards, rank, count}
+    leader, turn: leader, lastPlayer: leader,
+    phase: 'lead',
+    consecutivePasses: 0,
+    options: opts,
+    log: [],
+    winner: null,
+    busy: false,
+  };
+  selected.clear(); pendingRank=null;
+  G.phase = players[leader].isHuman ? 'lead' : 'waiting';
+  uiMode = G.phase;
+  pushLog('新局开始 · '+players[leader].name+' 先叫牌');
+  renderAll();
+  if(!players[leader].isHuman) scheduleAI();
+}
+
+/* ===================== 动作 ===================== */
+function curDecl(){ const t=G.table; return t.length? {rank:t[t.length-1].rank, count:t[t.length-1].count} : null; }
+
+function doLead(pi, cards, rank){
+  const p = G.players[pi];
+  for(const c of cards){ const i=p.hand.findIndex(h=>h.id===c.id); if(i>=0) p.hand.splice(i,1); }
+  sortHand(p.hand);
+  G.table.push({player:pi, cards:cards.slice(), rank, count:cards.length});
+  G.lastPlayer = pi;
+  G.consecutivePasses = 0;
+  pushLog(p.name+' 叫牌：<b>'+cards.length+'张'+rank+'</b>');
+  if(checkImmediateWin(pi)) return;
+  nextTurn();
+}
+
+function doFollow(pi, cards, rank){
+  const p = G.players[pi];
+  for(const c of cards){ const i=p.hand.findIndex(h=>h.id===c.id); if(i>=0) p.hand.splice(i,1); }
+  sortHand(p.hand);
+  G.table.push({player:pi, cards:cards.slice(), rank, count:cards.length});
+  G.lastPlayer = pi;
+  G.consecutivePasses = 0;
+  const up = rank !== curDeclRankBefore(pi);
+  pushLog(p.name+' 跟牌：<b>'+cards.length+'张'+rank+'</b>');
+  if(checkImmediateWin(pi)) return;
+  nextTurn();
+}
+function curDeclRankBefore(pi){ // 当前桌面声明点数(本玩家跟牌前)
+  return G.table.length? G.table[G.table.length-1].rank : null;
+}
+
+function doChallenge(pi){
+  const p = G.players[pi];
+  // 容错：连续3次掀错 → 自动过牌
+  if(G.options.tolerance && p.falseStreak >= 3){
+    pushLog(p.name+' 连续掀错，<b>自动过牌</b>');
+    doPass(pi); return;
+  }
+  const last = G.table[G.table.length-1];
+  const truthful = verifyBatch(last.cards, last.rank);
+  const target = G.players[last.player];
+  G._reveal = {cards: last.cards, rank: last.rank, truthful};
+  pushLog(p.name+' 掀牌！翻开 '+target.name+' 的 <b>'+last.count+'张'+last.rank+'</b>');
+  let picker, nextLeader;
+  if(truthful){
+    picker = pi; nextLeader = last.player;
+    if(G.options.tolerance) p.falseStreak++;
+    pushLog('核验：'+rankDesc(last)+' <b>属实</b>，'+p.name+' 收回桌面牌', 'red');
+  }else{
+    picker = last.player; nextLeader = pi;
+    if(G.options.tolerance) p.falseStreak = 0;
+    pushLog('核验：'+rankDesc(last)+' <b>有假</b>，'+target.name+' 收回桌面牌');
+  }
+  // 桌面全部牌归 picker
+  for(const b of G.table){ for(const c of b.cards) G.players[picker].hand.push(c); }
+  sortHand(G.players[picker].hand);
+  G.table = [];
+  G.consecutivePasses = 0;
+  renderAll();
+  // 揭示动画后继续
+  G.busy = true;
+  setTimeout(()=>{
+    G._reveal = null; G.busy = false;
+    // 胜利核验：last.player 若手牌为0(没被收牌)则获胜
+    if(G.players[last.player].hand.length===0){ gameOver(last.player); return; }
+    beginRound(nextLeader);
+  }, 1500);
+}
+
+function rankDesc(b){
+  const real = b.cards.filter(c=>!c.isJoker && c.rank===b.rank).length;
+  const jk = b.cards.filter(c=>c.isJoker).length;
+  const fake = b.cards.length - real - jk;
+  return real+'真'+(jk?'+'+jk+'王':'')+(fake?'+'+fake+'假':'');
+}
+
+function doPass(pi){
+  const p = G.players[pi];
+  G.consecutivePasses++;
+  pushLog(p.name+' 过牌');
+  if(G.consecutivePasses >= G.n - 1){
+    // 本轮结束，桌面牌淘汰收走
+    const n = G.table.reduce((s,b)=>s+b.cards.length,0);
+    pushLog('全员过牌，桌面 <b>'+n+'张</b> 淘汰');
+    G.table = [];
+    G.consecutivePasses = 0;
+    if(G.players[G.lastPlayer].hand.length===0){ gameOver(G.lastPlayer); return; }
+    beginRound(G.lastPlayer);
+    return;
+  }
+  nextTurn();
+}
+
+function nextTurn(){
+  G.turn = (G.turn + 1) % G.n;
+  const p = G.players[G.turn];
+  if(G.table.length === 0){
+    // 新一轮叫牌（理论上由 beginRound 处理）
+    G.phase = p.isHuman ? 'lead' : 'waiting';
+  }else{
+    G.phase = p.isHuman ? 'follow' : 'waiting';
+  }
+  uiMode = G.phase;
+  selected.clear(); pendingRank=null;
+  renderAll();
+  if(!p.isHuman) scheduleAI();
+}
+
+function beginRound(leaderIdx){
+  G.leader = leaderIdx; G.turn = leaderIdx;
+  G.table = []; G.consecutivePasses = 0; G.lastPlayer = leaderIdx;
+  const p = G.players[leaderIdx];
+  pushLog('—— 新一轮 · '+p.name+' 叫牌 ——');
+  G.phase = p.isHuman ? 'lead' : 'waiting';
+  uiMode = G.phase;
+  selected.clear(); pendingRank=null;
+  renderAll();
+  if(!p.isHuman) scheduleAI();
+}
+
+function checkImmediateWin(pi){
+  if(!G.options.verifyWin && G.players[pi].hand.length===0){
+    gameOver(pi); return true;
+  }
+  return false;
+}
+
+function gameOver(wi){
+  G.winner = wi; G.phase='over';
+  const youWin = (wi===0);
+  pushLog(G.players[wi].name+' 出完手牌，获胜！', youWin?'':'red');
+  renderAll();
+  setTimeout(()=>showOver(wi), 600);
+}
+
+/* ===================== AI ===================== */
+function scheduleAI(){ G.busy=true; renderAll(); setTimeout(aiAct, 700+Math.random()*700); }
+
+function aiAct(){
+  if(G.phase==='over') return;
+  G.busy=false;
+  const pi = G.turn;
+  const p = G.players[pi];
+  if(G.table.length===0){ aiLead(pi); }
+  else { aiFollow(pi); }
+}
+
+function aiLead(pi){
+  const p = G.players[pi];
+  const byRank = {};
+  for(const c of p.hand){ if(!c.isJoker){ (byRank[c.rank]=byRank[c.rank]||[]).push(c); } }
+  const jokers = p.hand.filter(c=>c.isJoker);
+  const ranksHave = Object.keys(byRank);
+  let truthful = Math.random() < 0.72;
+  // 手牌少时倾向真实出牌清空
+  if(p.hand.length <= 5) truthful = Math.random() < 0.85;
+  let rank, cards;
+  if(truthful && ranksHave.length){
+    // 选张数最多的点数
+    ranksHave.sort((a,b)=> byRank[b].length - byRank[a].length || rankIdx(b)-rankIdx(a));
+    rank = ranksHave[0];
+    let have = byRank[rank].length;
+    let n = Math.min(have, Math.max(1, Math.min(MAX_PER_RANK, have)));
+    // 手牌少则尽量多出
+    if(p.hand.length <= 6) n = Math.min(have + jokers.length, MAX_PER_RANK, have>0?have:1);
+    n = Math.max(1, Math.min(n, have));
+    cards = byRank[rank].slice(0, n);
+  }else{
+    // 虚张：随机点数 + 1~3张任意牌
+    rank = RANKS[Math.floor(Math.random()*RANKS.length)];
+    let pool = p.hand.slice();
+    let n = 1 + Math.floor(Math.random()* Math.min(3, pool.length));
+    n = Math.min(n, MAX_PER_RANK, pool.length);
+    cards = pool.slice(0, n);
+  }
+  doLead(pi, cards, rank);
+}
+
+function aiFollow(pi){
+  const p = G.players[pi];
+  const cur = curDecl();
+  const realCount = p.hand.filter(c=>!c.isJoker && c.rank===cur.rank).length;
+  const jokerCount = p.hand.filter(c=>c.isJoker).length;
+  const target = G.players[G.lastPlayer];
+  // 怀疑度
+  let susp = 0.12 + p.boldness*0.12;
+  if(cur.count >= 5) susp += 0.30;
+  else if(cur.count >= 4) susp += 0.20;
+  else if(cur.count >= 3) susp += 0.07;
+  susp += Math.min(0.35, 0.10*realCount);
+  if(target.hand.length <= 3) susp += 0.18;
+  if(target.hand.length === 0) susp += 0.2; // 对方要赢了，掀
+  susp = Math.max(0, Math.min(0.95, susp));
+  const canChallenge = !(G.options.tolerance && p.falseStreak >= 3);
+  const roll = Math.random();
+
+  // 决定掀牌
+  if(canChallenge && susp > 0.55 && roll < (0.45 + susp*0.45)){
+    doChallenge(pi); return;
+  }
+  // 决定跟牌或过牌
+  const canFollowTruth = realCount>0 || jokerCount>0;
+  if(canFollowTruth && roll < 0.74){
+    // 真实跟牌 1~2 张
+    let useJoker = realCount===0;
+    let pool = useJoker ? p.hand.filter(c=>c.isJoker) : p.hand.filter(c=>!c.isJoker && c.rank===cur.rank);
+    let n = Math.min(pool.length, 1 + Math.floor(Math.random()*2));
+    n = Math.max(1, n);
+    let cards = pool.slice(0, n);
+    // 升级跟牌：有时换更大点数（若有该点数牌）
+    if(G.options.upgrade && Math.random() < 0.4){
+      const upgraded = aiPickUpgrade(pi, cards.length, cur);
+      if(upgraded){ doFollow(pi, upgraded.cards, upgraded.rank); return; }
+    }
+    doFollow(pi, cards, cur.rank); return;
+  }
+  // 虚张跟牌：偶尔
+  if(roll < 0.86 && p.hand.length>0){
+    const non = p.hand.filter(c=>!c.isJoker && c.rank!==cur.rank);
+    if(non.length>0){
+      let n = Math.min(non.length, 1 + Math.floor(Math.random()* Math.min(2, non.length)));
+      doFollow(pi, non.slice(0,n), cur.rank); return;
+    }
+  }
+  // 过牌
+  // 若无法跟且不能掀，过牌；但要避免无限循环：手牌很多时也可过
+  doPass(pi);
+}
+
+function aiPickUpgrade(pi, needCount, cur){
+  const p = G.players[pi];
+  // 找点数大于 cur.rank 且有牌的
+  const cands = RANKS.filter(r => rankIdx(r) > rankIdx(cur.rank) && p.hand.some(c=>!c.isJoker && c.rank===r));
+  if(cands.length===0) return null;
+  // 同数量更大点数
+  if(needCount === cur.count){
+    const r = cands[Math.floor(Math.random()*cands.length)];
+    const pool = p.hand.filter(c=>!c.isJoker && c.rank===r);
+    if(pool.length >= needCount) return {cards: pool.slice(0,needCount), rank:r};
+  }
+  // 或更多张数(任意点数)
+  if(needCount > cur.count){
+    const r = cands[Math.floor(Math.random()*cands.length)];
+    const pool = p.hand.filter(c=>!c.isJoker && c.rank===r);
+    if(pool.length >= needCount) return {cards: pool.slice(0,needCount), rank:r};
+  }
+  return null;
+}
+
+/* ===================== 渲染 ===================== */
+const $ = id => document.getElementById(id);
+
+function pushLog(msg, cls){ G.log.push({msg, cls}); if(G.log.length>6) G.log.shift(); }
+
+function cardEl(c, extraClass){
+  const d = document.createElement('div');
+  d.className = 'card ' + (c.color==='red'?'red':'') + (c.isJoker?' jk':'') + ' ' + (extraClass||'');
+  if(c.isJoker){
+    d.innerHTML = '<div class="cs">'+c.label+'</div>';
+  }else{
+    d.innerHTML = '<div class="tl">'+c.rank+'<br>'+c.suit+'</div><div class="cs">'+c.suit+'</div><div class="br">'+c.rank+'<br>'+c.suit+'</div>';
+  }
+  return d;
+}
+
+function renderAll(){
+  if(!G) return;
+  renderOpponents();
+  renderTable();
+  renderHand();
+  renderActions();
+  renderLog();
+}
+
+function renderOpponents(){
+  const box = $('opponents'); box.innerHTML='';
+  for(let i=1;i<G.n;i++){
+    const p = G.players[i];
+    const d = document.createElement('div');
+    d.className = 'opp' + (G.turn===i?' active':'');
+    const stackN = Math.min(5, Math.ceil(p.hand.length/4));
+    let stack='';
+    for(let s=0;s<stackN;s++) stack+='<i></i>';
+    let think = '';
+    if(G.busy && G.turn===i && G.phase!=='over') think='思考中…';
+    if(p.falseStreak>=3 && G.options.tolerance) think+=' (掀牌受限)';
+    d.innerHTML = '<div class="av">'+(i===1?'🤖':(i===2?'👾':'🦾'))+'</div>'+
+      '<div class="nm">'+p.name+'</div>'+
+      '<div class="cnt">手牌 <b>'+p.hand.length+'</b></div>'+
+      '<div class="stack">'+stack+'</div>'+
+      '<div class="think">'+think+'</div>';
+    box.appendChild(d);
+  }
+}
+
+function renderTable(){
+  const box = $('table'); box.innerHTML='';
+  const decl = curDecl();
+  if(G._reveal){
+    // 掀牌揭示
+    const d = document.createElement('div'); d.className='decl-box';
+    d.innerHTML = '<div class="lab">掀牌核验 · 声明 '+G._reveal.count+'张'+G._reveal.rank+'</div>';
+    box.appendChild(d);
+    const row = document.createElement('div'); row.className='reveal-row';
+    for(const c of G._reveal.cards){ const e=cardEl(c); e.style.width='12vw'; e.style.maxWidth='52px'; row.appendChild(e); }
+    box.appendChild(row);
+    const r = document.createElement('div'); r.className='hint'; r.style.marginTop='8px';
+    r.innerHTML = G._reveal.truthful ? '<b style="color:#7fd8a0">属实 ✕ 掀牌者收回</b>' : '<b class="red">有假 ✓ 被质疑者收回</b>';
+    box.appendChild(r);
+    return;
+  }
+  if(!decl){
+    const d = document.createElement('div'); d.className='decl-box';
+    d.innerHTML = '<div class="lab">等待叫牌</div><div class="val">—</div>';
+    box.appendChild(d);
+    if(G.table.length===0){
+      const pile=document.createElement('div'); pile.className='pile';
+      pile.innerHTML='<div class="hint" style="margin:0">桌面空空，由 '+G.players[G.leader].name+' 开叫</div>';
+      box.appendChild(pile);
+    }
+    return;
+  }
+  const d = document.createElement('div'); d.className='decl-box';
+  d.innerHTML = '<div class="lab">当前声明</div><div class="val">'+decl.count+'<small>张</small> '+decl.rank+'</div>';
+  box.appendChild(d);
+  const pile = document.createElement('div'); pile.className='pile';
+  G.table.forEach((b,idx)=>{
+    const wrap = document.createElement('div'); wrap.className='batch'+(idx===G.table.length-1?' latest':'');
+    const tag = document.createElement('div'); tag.className='tag';
+    tag.innerHTML = G.players[b.player].name+' · <b>'+b.count+'张'+b.rank+'</b>';
+    wrap.appendChild(tag);
+    const stack = document.createElement('div'); stack.style.display='flex';
+    const show = Math.min(b.count, 4);
+    for(let k=0;k<show;k++){
+      const f=document.createElement('div'); f.className='face-down'+(b.count>1?' stack2':'');
+      if(k>0) f.style.marginLeft='-26px';
+      stack.appendChild(f);
+    }
+    if(b.count>4){ const m=document.createElement('div'); m.style.alignSelf='center'; m.style.marginLeft='3px'; m.style.fontSize='3vw'; m.style.color='#cdbf99'; m.textContent='+'+(b.count-4); stack.appendChild(m); }
+    wrap.appendChild(stack);
+    pile.appendChild(wrap);
+  });
+  box.appendChild(pile);
+}
+
+function renderHand(){
+  const box = $('hand'); box.innerHTML='';
+  const me = G.players[0];
+  for(const c of me.hand){
+    const e = cardEl(c, 'hcard'+(selected.has(c.id)?' sel':''));
+    e.addEventListener('click', ()=>{
+      if(uiMode==='waiting'||uiMode==='over'||G.busy) return;
+      if(selected.has(c.id)) selected.delete(c.id); else selected.add(c.id);
+      renderHand(); renderActions();
+    });
+    box.appendChild(e);
+  }
+}
+
+function renderActions(){
+  const box = $('actions'); box.innerHTML='';
+  if(G.phase==='over'){ box.innerHTML='<div class="hint">本局结束</div>'; return; }
+  if(G.busy || uiMode==='waiting'){ box.innerHTML='<div class="hint">'+G.players[G.turn].name+' 思考中…</div>'; return; }
+  const me = G.players[0];
+  if(G.turn!==0){ box.innerHTML='<div class="hint">等待对手…</div>'; return; }
+
+  if(uiMode==='lead'){
+    const div=document.createElement('div'); div.className='turn-tag'; div.textContent='轮到你叫牌：选择手牌并声明点数'; box.appendChild(div);
+    const selCount = selected.size;
+    const rb=document.createElement('div'); rb.className='rankbar';
+    for(const r of RANKS){
+      const b=document.createElement('button'); b.textContent=r;
+      if(pendingRank===r) b.className='on';
+      const maxForRank = MAX_PER_RANK;
+      b.disabled = !(selCount>=1 && selCount<=maxForRank);
+      b.addEventListener('click',()=>{ pendingRank = (pendingRank===r?null:r); renderActions(); });
+      rb.appendChild(b);
+    }
+    box.appendChild(rb);
+    const hint=document.createElement('div'); hint.className='hint';
+    hint.innerHTML = '已选 <b>'+selCount+'</b> 张'+(pendingRank?(' · 声明 <b>'+selCount+'张'+pendingRank+'</b>'):' · 再选一个点数');
+    box.appendChild(hint);
+    const row=document.createElement('div'); row.className='act-row';
+    const ok=document.createElement('button'); ok.className='btn'; ok.textContent='出 牌';
+    ok.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK && pendingRank);
+    ok.addEventListener('click',()=>{
+      const cards = me.hand.filter(c=>selected.has(c.id));
+      doLead(0, cards, pendingRank);
+    });
+    row.appendChild(ok);
+    box.appendChild(row);
+    return;
+  }
+
+  if(uiMode==='follow'){
+    const cur = curDecl();
+    const div=document.createElement('div'); div.className='turn-tag';
+    div.textContent='当前声明：'+cur.count+'张'+cur.rank+' · 你的回合'; box.appendChild(div);
+    const selCount = selected.size;
+    const row=document.createElement('div'); row.className='act-row';
+
+    const bFollow=document.createElement('button'); bFollow.className='btn'; bFollow.textContent='跟牌(同点)';
+    bFollow.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK);
+    bFollow.addEventListener('click',()=>{ const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,cur.rank); });
+    row.appendChild(bFollow);
+
+    if(G.options.upgrade){
+      const bUp=document.createElement('button'); bUp.className='btn dark'; bUp.textContent='升级';
+      bUp.disabled = !(selCount>=1 && selCount<=MAX_PER_RANK);
+      bUp.addEventListener('click',()=>{ uiMode='upgrade'; pendingRank=null; renderActions(); });
+      row.appendChild(bUp);
+    }
+    const bCh=document.createElement('button'); bCh.className='btn red'; bCh.textContent='掀牌';
+    bCh.addEventListener('click',()=>{ if(confirm('掀牌质疑 '+G.players[G.lastPlayer].name+' ？')) doChallenge(0); });
+    row.appendChild(bCh);
+    const bPass=document.createElement('button'); bPass.className='btn ghost'; bPass.textContent='过牌';
+    bPass.addEventListener('click',()=>{ doPass(0); });
+    row.appendChild(bPass);
+    box.appendChild(row);
+    const hint=document.createElement('div'); hint.className='hint'; hint.style.marginTop='6px';
+    hint.innerHTML='已选 <b>'+selCount+'</b> 张（跟牌/升级用）';
+    box.appendChild(hint);
+    return;
+  }
+
+  if(uiMode==='upgrade'){
+    const cur = curDecl();
+    const selCount = selected.size;
+    const div=document.createElement('div'); div.className='turn-tag';
+    div.textContent='升级跟牌：选择点数（需 '+((selCount===cur.count)?'更大点数':'≥'+cur.count+'张 任意点数')+'）'; box.appendChild(div);
+    const rb=document.createElement('div'); rb.className='rankbar';
+    for(const r of RANKS){
+      const b=document.createElement('button'); b.textContent=r;
+      if(pendingRank===r) b.className='on';
+      let valid=false;
+      if(selCount>=1 && selCount<=MAX_PER_RANK){
+        if(selCount > cur.count) valid = true;
+        else if(selCount === cur.count && rankIdx(r) > rankIdx(cur.rank)) valid = true;
+      }
+      b.disabled = !valid;
+      b.addEventListener('click',()=>{ pendingRank=(pendingRank===r?null:r); renderActions(); });
+      rb.appendChild(b);
+    }
+    box.appendChild(rb);
+    const hint=document.createElement('div'); hint.className='hint';
+    hint.innerHTML='已选 <b>'+selCount+'</b> 张'+(pendingRank?(' · 升级为 <b>'+selCount+'张'+pendingRank+'</b>'):'');
+    box.appendChild(hint);
+    const row=document.createElement('div'); row.className='act-row';
+    const ok=document.createElement('button'); ok.className='btn'; ok.textContent='确认升级';
+    ok.disabled = !pendingRank;
+    ok.addEventListener('click',()=>{ const cards=me.hand.filter(c=>selected.has(c.id)); doFollow(0,cards,pendingRank); });
+    row.appendChild(ok);
+    const back=document.createElement('button'); back.className='btn ghost'; back.textContent='返回';
+    back.addEventListener('click',()=>{ uiMode='follow'; pendingRank=null; renderActions(); });
+    row.appendChild(back);
+    box.appendChild(row);
+    return;
+  }
+}
+
+function renderLog(){
+  const box=$('log'); box.innerHTML='';
+  const last = G.log.slice(-2);
+  for(const l of last){
+    const d=document.createElement('div'); d.innerHTML=l.msg; if(l.cls==='red') d.className='red';
+    box.appendChild(d);
+  }
+}
+
+function showOver(wi){
+  $('gameScreen').hidden=true;
+  $('overScreen').hidden=false;
+  const youWin = (wi===0);
+  $('overTtl').textContent = youWin? '你 赢 了' : G.players[wi].name+' 获胜';
+  $('overTtl').className = 'ttl ' + (youWin?'win':'lose');
+  $('overSub').textContent = youWin? '恭喜出完所有手牌！' : '再接再厉，下局必胜';
+}
+
+/* ===================== 启动界面交互 ===================== */
+const opts = { nplayers:3, upgrade:false, tolerance:true, verifyWin:true };
+
+function bindSeg(id, key, parse){
+  const seg = $(id);
+  seg.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      opts[key] = parse(b.dataset.v);
+    });
+  });
+}
+bindSeg('segPlayers','nplayers', v=>parseInt(v));
+function bindSwitch(id, key){
+  const sw=$(id);
+  sw.addEventListener('click',()=>{ sw.classList.toggle('on'); opts[key]=sw.classList.contains('on'); });
+}
+bindSwitch('swUpgrade','upgrade');
+bindSwitch('swTolerance','tolerance');
+bindSwitch('swVerify','verifyWin');
+
+$('btnStart').addEventListener('click', ()=>{
+  $('startScreen').hidden=true;
+  $('gameScreen').hidden=false;
+  newGame(Object.assign({}, opts));
+});
+$('btnRules').addEventListener('click', ()=>{ $('startScreen').hidden=true; $('rulesScreen').hidden=false; });
+$('btnRulesBack').addEventListener('click', ()=>{ $('rulesScreen').hidden=true; $('startScreen').hidden=false; });
+$('btnAgain').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('gameScreen').hidden=false; newGame(Object.assign({},opts)); });
+$('btnHome').addEventListener('click', ()=>{ $('overScreen').hidden=true; $('startScreen').hidden=false; });
+</script>
+</body>
+</html>

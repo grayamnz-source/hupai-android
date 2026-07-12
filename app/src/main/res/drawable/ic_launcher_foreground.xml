@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- back card -->
+    <path
+        android:fillColor="#e8d27a"
+        android:pathData="M30,28 L30,80 A4,4 0 0 0 34,84 L66,84 A4,4 0 0 0 70,80 L70,28 A4,4 0 0 0 66,24 L34,24 A4,4 0 0 0 30,28 Z" />
+    <!-- front card -->
+    <path
+        android:fillColor="#ffffff"
+        android:strokeColor="#c9b25a"
+        android:strokeWidth="1.2"
+        android:pathData="M44,36 L44,82 A3,3 0 0 0 47,85 L73,85 A3,3 0 0 0 76,82 L76,36 A3,3 0 0 0 73,33 L47,33 A3,3 0 0 0 44,36 Z" />
+    <!-- K -->
+    <path
+        android:fillColor="#c0392b"
+        android:pathData="M50,42 L53,42 L57,48 L57,42 L59,42 L59,52 L57,52 L53,46 L53,52 L50,52 Z" />
+    <!-- suit -->
+    <path
+        android:fillColor="#c0392b"
+        android:pathData="M54,58 C52,61 49,63 49,66 C49,68 51,69 52,68 C53,68 53,67 53,66 C53,70 51,74 50,76 L58,76 C57,74 55,70 55,66 C55,67 55,68 56,68 C57,69 59,68 59,66 C59,63 56,61 54,58 Z" />
+</vector>
