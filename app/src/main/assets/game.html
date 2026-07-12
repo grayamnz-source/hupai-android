@@ -36,20 +36,20 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .opp { flex: 1; min-width: 90px; background: rgba(0,0,0,.3); border-radius: 12px; padding: 10px; text-align: center; }
 .opp .nm { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
 .opp .cnt { font-size: 4.5vw; color: #f0d378; font-weight: 900; }
-#table { flex: 0 0 14vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
+#table { flex: 0 0 16vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; }
 .decl-box { text-align: center; }
 .decl-box .val { font-size: 6.5vw; font-weight: 900; color: #f0d378; }
-.pile { display: flex; gap: 3px; margin-top: 6px; }
-.face-down { width: 24px; height: 34px; border-radius: 3px; background: repeating-linear-gradient(45deg,#9e2b25 0 5px,#7c201c 5px 10px); border: 1px solid #d4af37; }
-.revealed { display: flex; gap: 4px; margin-top: 6px; }
-.rcard { width: 26px; height: 36px; border-radius: 3px; background: #f5f2ea; color: #222; position: relative; font-weight: 800; }
+.pile { display: flex; gap: 4px; margin-top: 8px; }
+.face-down { width: 32px; height: 45px; border-radius: 4px; background: repeating-linear-gradient(45deg,#9e2b25 0 6px,#7c201c 6px 12px); border: 1px solid #d4af37; }
+.revealed { display: flex; gap: 6px; margin-top: 8px; }
+.rcard { width: 38px; height: 52px; border-radius: 5px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; position: relative; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
 .rcard.red { color: #d33; }
-.rcard .tl { position: absolute; top: 1px; left: 2px; font-size: 2.4vw; line-height: 1; }
-.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4vw; }
-#hand { flex-shrink: 0; height: 90px; padding: 4px; overflow-x: auto; display: flex; gap: 0; }
+.rcard .tl { position: absolute; top: 2px; left: 3px; font-size: 3.2vw; line-height: 1; }
+.rcard .cs { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5vw; }
+#hand { flex-shrink: 0; height: 90px; padding: 4px; overflow-x: auto; overflow-y: visible; display: flex; gap: 0; }
 .hcard { width: 46px; height: 82px; border-radius: 6px; background: linear-gradient(160deg,#f7f4ed,#e8e2d4); color: #222; margin-left: -12px; position: relative; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,.25); border: 1px solid rgba(0,0,0,.08); }
 .hcard:first-child { margin-left: 0; }
-.hcard.sel { transform: translateY(-12px); box-shadow: 0 6px 14px rgba(240,211,120,.5); }
+.hcard.sel { transform: translateY(-12px); box-shadow: 0 6px 14px rgba(240,211,120,.5); z-index: 10; }
 .hcard .top { position: absolute; top: 3px; left: 0; right: 0; text-align: center; font-size: 3.8vw; font-weight: 900; line-height: 1; }
 .hcard .bot { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 4.8vw; line-height: 1; }
 .hcard.red { color: #d33; }
@@ -58,10 +58,12 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #rankbar { height: 34px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 5px; padding: 2px; margin-bottom: 6px; }
 #rankbar button { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(212,175,55,.4); background: rgba(0,0,0,.35); color: #ede2c4; font-size: 3.2vw; font-weight: 800; }
 #rankbar button.on { background: linear-gradient(180deg,#f0d378,#c9962a); color: #2a1c05; border-color: transparent; }
-#actRow { display: flex; gap: 8px; }
+#actRow { display: flex; gap: 8px; margin-bottom: 6px; }
 #actRow .btn { font-size: 4vw; padding: 10px 0; flex: 1; }
+#newGameBtn { width: 100%; padding: 8px; font-size: 3.8vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
+#newGameBtn:active { background: rgba(212,175,55,.2); }
 #logPanel { flex: 1 1 auto; overflow-y: auto; padding: 8px 10px max(env(safe-area-inset-bottom),12px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
-#logPanel .log-item { font-size: 4vw; color: #cdbf99; line-height: 1.5; padding: 3px 0; }
+#logPanel .log-item { font-size: 3.4vw; color: #cdbf99; line-height: 1.4; padding: 2px 0; }
 #logPanel .log-item b { color: #f0d378; }
 #logPanel .log-item .red { color: #e87f77; }
 .hint { font-size: 3.2vw; color: #9fb6a6; text-align: center; margin-bottom: 6px; }
@@ -100,6 +102,7 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
     <div id="actionBar">
       <div id="rankbar"></div>
       <div id="actRow"></div>
+      <button id="newGameBtn" onclick="restartGame()">新开</button>
     </div>
     <div id="logPanel"></div>
   </div>
@@ -348,6 +351,10 @@ function renderLog(){
 function startGameNow(){
   $('startScreen').hidden = true;
   $('gameScreen').hidden = false;
+  newGame(Object.assign({}, opts));
+}
+
+function restartGame(){
   newGame(Object.assign({}, opts));
 }
 </script>
