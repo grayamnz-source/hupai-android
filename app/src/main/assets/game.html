@@ -386,6 +386,8 @@ function nextTurn(){
     G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; G.lastHandPassCount=0; revealedCards=null; G.selectedRank=null;
     addLog('连续过牌，桌面牌淘汰');
     G.turn = lastPlayer;
+    render();
+    return;
   }
   
   do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
