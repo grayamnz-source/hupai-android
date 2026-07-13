@@ -68,15 +68,28 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 #actRow .btn { font-size: 3.8vw; padding: 8px 0; flex: 1; }
 #actRow .btn.disabled { opacity: 0.4; cursor: not-allowed; }
 #ctrlRow { display: flex; gap: 8px; }
-#newGameBtn { flex: 1; padding: 8px; font-size: 3.4vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
+#newGameBtn { flex: 1; padding: 8px; font-size: 3.2vw; font-weight: 800; color: #ede2c4; background: rgba(0,0,0,.3); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; cursor: pointer; }
 #newGameBtn:active { background: rgba(212,175,55,.2); }
-#exitBtn { flex: 1; padding: 8px; font-size: 3.4vw; font-weight: 800; color: #e87f77; background: rgba(0,0,0,.3); border: 1px solid rgba(222,85,77,.3); border-radius: 8px; cursor: pointer; }
+#settingsBtn { flex: 1; padding: 8px; font-size: 3.2vw; font-weight: 800; color: #9fb6a6; background: rgba(0,0,0,.3); border: 1px solid rgba(159,182,166,.3); border-radius: 8px; cursor: pointer; }
+#settingsBtn:active { background: rgba(159,182,166,.2); }
+#exitBtn { flex: 1; padding: 8px; font-size: 3.2vw; font-weight: 800; color: #e87f77; background: rgba(0,0,0,.3); border: 1px solid rgba(222,85,77,.3); border-radius: 8px; cursor: pointer; }
 #exitBtn:active { background: rgba(222,85,77,.2); }
 #logPanel { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px max(env(safe-area-inset-bottom),10px); background: rgba(6,32,24,.7); border-top: 1px solid rgba(212,175,55,.15); }
 #logPanel .log-item { font-size: 3vw; color: #cdbf99; line-height: 1.4; padding: 2px 0; }
 #logPanel .log-item b { color: #f0d378; }
 #logPanel .log-item .red { color: #e87f77; }
 .hint { font-size: 3vw; color: #9fb6a6; text-align: center; margin-bottom: 4px; }
+
+#settingsScreen { align-items: center; justify-content: center; gap: 16px; padding: max(env(safe-area-inset-top),20px) 16px max(env(safe-area-inset-bottom),30px); background: radial-gradient(120% 90% at 50% 0%, #134d35 0%, #0a3526 45%, #062018 100%); }
+.settings-container { width: 100%; max-width: 360px; background: rgba(0,0,0,.3); border-radius: 16px; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+.settings-title { font-size: 6vw; font-weight: 900; color: #d4af37; text-align: center; }
+.settings-item { display: flex; flex-direction: column; gap: 6px; }
+.settings-label { font-size: 3.8vw; color: #ede2c4; font-weight: 700; }
+.settings-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(212,175,55,.3); background: rgba(0,0,0,.35); color: #f4ecd8; font-size: 3.8vw; outline: none; }
+.settings-input:focus { border-color: #d4af37; }
+.settings-input::placeholder { color: #5a6b5e; }
+.settings-status { font-size: 3.2vw; color: #9fb6a6; padding: 8px 12px; background: rgba(0,0,0,.25); border-radius: 8px; }
+#aiToggle { width: fit-content; }
 </style>
 </head>
 <body>
@@ -91,10 +104,42 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
         <div id="actRow"></div>
         <div id="ctrlRow">
           <button id="newGameBtn" onclick="restartGame()">重新开始游戏</button>
+          <button id="settingsBtn" onclick="showSettings()">AI设置</button>
           <button id="exitBtn" onclick="exitGame()">退出游戏</button>
         </div>
       </div>
       <div id="logPanel"></div>
+    </div>
+  </div>
+
+  <div id="settingsScreen" class="screen" hidden>
+    <div class="settings-container">
+      <div class="settings-title">AI API 设置</div>
+      <div class="settings-item">
+        <div class="settings-label">API 地址</div>
+        <input type="text" id="apiUrl" class="settings-input" placeholder="https://api.openai.com/v1/chat/completions">
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">API Key</div>
+        <input type="password" id="apiKey" class="settings-input" placeholder="sk-...">
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">模型名称</div>
+        <input type="text" id="apiModel" class="settings-input" placeholder="gpt-4o-mini">
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">启用AI决策</div>
+        <div class="seg" id="aiToggle">
+          <button class="on" data-val="true" onclick="toggleAI(true)">开启</button>
+          <button data-val="false" onclick="toggleAI(false)">关闭</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">AI思考中...</div>
+        <div class="settings-status" id="aiStatus">未调用</div>
+      </div>
+      <button class="btn" onclick="saveSettings()">保存设置</button>
+      <button class="link" onclick="hideSettings()">返回游戏</button>
     </div>
   </div>
 </div>
@@ -116,6 +161,29 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function $(id){ return document.getElementById(id); }
 
 const opts = { nplayers:3, upgrade:false, tolerance:false, verifyWin:true };
+
+const aiConfig = {
+  enabled: false,
+  apiUrl: '',
+  apiKey: '',
+  model: 'gpt-4o-mini'
+};
+
+function loadAIConfig(){
+  try {
+    const saved = localStorage.getItem('aiConfig');
+    if(saved){
+      const obj = JSON.parse(saved);
+      Object.assign(aiConfig, obj);
+    }
+  } catch(e){}
+}
+
+function saveAIConfig(){
+  try {
+    localStorage.setItem('aiConfig', JSON.stringify(aiConfig));
+  } catch(e){}
+}
 
 let G = {};
 let logHistory = [];
@@ -140,6 +208,111 @@ function exitGame(){
   } else {
     window.close();
   }
+}
+
+function showSettings(){
+  $('apiUrl').value = aiConfig.apiUrl;
+  $('apiKey').value = aiConfig.apiKey;
+  $('apiModel').value = aiConfig.model;
+  updateAIToggle();
+  $('settingsScreen').hidden = false;
+}
+
+function hideSettings(){
+  $('settingsScreen').hidden = true;
+}
+
+function toggleAI(val){
+  aiConfig.enabled = val;
+  updateAIToggle();
+}
+
+function updateAIToggle(){
+  const btns = $('aiToggle').querySelectorAll('button');
+  btns.forEach(b=>{
+    const val = b.dataset.val === 'true';
+    b.classList.toggle('on', val === aiConfig.enabled);
+  });
+}
+
+function saveSettings(){
+  aiConfig.apiUrl = $('apiUrl').value.trim();
+  aiConfig.apiKey = $('apiKey').value.trim();
+  aiConfig.model = $('apiModel').value.trim();
+  saveAIConfig();
+  hideSettings();
+}
+
+async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase){
+  if(!aiConfig.enabled || !aiConfig.apiUrl || !aiConfig.apiKey){
+    return null;
+  }
+  
+  $('aiStatus').textContent = `${playerName} 思考中...`;
+  
+  const prompt = buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase);
+  
+  try {
+    const resp = await fetch(aiConfig.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${aiConfig.apiKey}`
+      },
+      body: JSON.stringify({
+        model: aiConfig.model,
+        messages: [
+          { role: 'system', content: '你是唬牌（吹牛）游戏的AI玩家。根据当前游戏状态做出最佳决策。只能返回JSON格式：{"action":"play","rank":"A","count":1} 或 {"action":"pass"} 或 {"action":"reveal"}。其中rank必须是A,2,3,4,5,6,7,8,9,10,J,Q,K之一。在最后一手牌判定阶段只能选pass或reveal。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 100
+      })
+    });
+    
+    if(!resp.ok){
+      $('aiStatus').textContent = `API错误: ${resp.status}`;
+      return null;
+    }
+    
+    const data = await resp.json();
+    const text = data.choices[0].message.content.trim();
+    $('aiStatus').textContent = `${playerName} 决策完成`;
+    
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      if(match) return JSON.parse(match[0]);
+      return null;
+    } catch(e){
+      return null;
+    }
+  } catch(e){
+    $('aiStatus').textContent = `API异常: ${e.message}`;
+    return null;
+  }
+}
+
+function buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase){
+  let prompt = `你是玩家「${playerName}」，正在玩唬牌游戏。\n`;
+  prompt += `你的手牌：${handInfo}\n`;
+  
+  if(tableInfo){
+    prompt += `桌面已有牌：${tableInfo}\n`;
+    prompt += `上家声明：${lastDecl.count}张${lastDecl.rank}\n`;
+  } else {
+    prompt += `桌面无牌，你叫牌\n`;
+  }
+  
+  if(isLastHandPhase){
+    prompt += `\n注意：某位玩家已出完最后一手牌，现在进入判定阶段。你只能选择过牌(pass)或掀牌(reveal)。\n`;
+    prompt += `掀牌后如果牌是真的，出完牌的玩家赢；如果是假的，出完牌的玩家收回桌面牌，你开下轮。\n`;
+  } else {
+    prompt += `\n可选操作：出牌(play)、过牌(pass)、掀牌(reveal)\n`;
+    prompt += `出牌时需指定rank和count。跟牌时rank必须与上家相同。\n`;
+  }
+  
+  prompt += `\n请返回JSON决策。`;
+  return prompt;
 }
 
 function sortPlayerHand(){
@@ -394,11 +567,27 @@ function nextTurn(){
   render();
 }
 
-function aiTurn(){
+async function aiTurn(){
   const p = G.players[G.turn];
   const lastFinish = isLastHandFinisher();
   
   if(lastFinish){
+    if(aiConfig.enabled && aiConfig.apiUrl && aiConfig.apiKey){
+      G.busy = true;
+      render();
+      const handInfo = p.hand.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
+      const tableInfo = G.table.map(b=>`${G.players[b.player].name}声明${b.declaredCount}张${b.declaredRank}`).join('；');
+      const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, true);
+      G.busy = false;
+      if(decision){
+        if(decision.action === 'reveal'){
+          actionReveal();
+        } else {
+          actionPass();
+        }
+        return;
+      }
+    }
     const revealChance = Math.random() * 0.5;
     if(Math.random()<revealChance){
       actionReveal();
@@ -410,6 +599,51 @@ function aiTurn(){
   
   if(p.hand.length===0) return;
   
+  if(aiConfig.enabled && aiConfig.apiUrl && aiConfig.apiKey){
+    G.busy = true;
+    render();
+    const handInfo = p.hand.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
+    const tableInfo = G.table.length>0 ? G.table.map(b=>`${G.players[b.player].name}声明${b.declaredCount}张${b.declaredRank}`).join('；') : null;
+    const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, false);
+    G.busy = false;
+    if(decision){
+      if(decision.action === 'pass' && G.table.length > 0){
+        actionPass();
+        return;
+      }
+      if(decision.action === 'reveal' && G.table.length > 0){
+        actionReveal();
+        return;
+      }
+      if(decision.action === 'play'){
+        const rank = G.lastDecl.count > 0 && !opts.upgrade ? G.lastDecl.rank : (decision.rank && RANKS.includes(decision.rank) ? decision.rank : RANKS[Math.floor(Math.random()*RANKS.length)]);
+        const cnt = Math.min(decision.count || 1, p.hand.length);
+        if(cnt < 1 || cnt > p.hand.length){
+          aiTurnLocal(p);
+          return;
+        }
+        const indices = [];
+        for(let i=0;i<cnt && i<p.hand.length;i++) indices.push(i);
+        const cards = indices.map(i=>p.hand[i]);
+        p.hand = p.hand.filter((_,i)=>!indices.includes(i));
+        p.tableCardsPlayed = true;
+        G.table.push({player:G.turn, cards:cards, declaredRank:rank, declaredCount:cards.length});
+        G.lastDecl = {count:cards.length, rank:rank};
+        G.passCount = 0;
+        G.lastHandPassCount = 0;
+        const action = G.table.length===1 ? '叫牌' : '跟牌';
+        addLog(`${p.name} ${action}: ${cards.length}张${rank}`);
+        revealedCards = null;
+        nextTurn();
+        return;
+      }
+    }
+  }
+  
+  aiTurnLocal(p);
+}
+
+function aiTurnLocal(p){
   const revealChance = Math.random() * 0.5;
   if(G.table.length>0 && Math.random()<revealChance){
     actionReveal(); return;
@@ -448,6 +682,7 @@ function restartGame(){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
+  loadAIConfig();
   newGame();
 });
 </script>
