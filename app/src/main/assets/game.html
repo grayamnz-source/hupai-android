@@ -180,10 +180,14 @@ function androidHttpCallback(requestId, result){
   const cb = httpCallbacks[requestId];
   if(!cb) return;
   delete httpCallbacks[requestId];
-  if(result.ok){
+  if(typeof result === 'string'){
+    try { result = JSON.parse(result); } catch(e){}
+  }
+  console.log('androidHttpCallback:', JSON.stringify(result));
+  if(result && result.ok){
     cb.resolve({ok: true, status: result.status, text: async ()=> result.body, json: async ()=> JSON.parse(result.body)});
   } else {
-    cb.reject(new Error(result.error || `HTTP ${result.status}`));
+    cb.reject(new Error(result?.error || `HTTP ${result?.status || 'unknown'}`));
   }
 }
 

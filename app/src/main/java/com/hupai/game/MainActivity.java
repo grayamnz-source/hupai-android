@@ -146,12 +146,9 @@ public class MainActivity extends Activity {
                     result.put("body", response.toString());
 
                     runOnUiThread(() -> {
-                        String js = "androidHttpCallback('" + requestId + "', " + result.toString() + ")";
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                            webView.evaluateJavascript(js, null);
-                        } else {
-                            webView.loadUrl("javascript:" + js);
-                        }
+                        String jsonStr = result.toString();
+                        String js = "androidHttpCallback('" + requestId + "', '" + jsonStr.replace("'", "\\'") + "')";
+                        webView.loadUrl("javascript:" + js);
                     });
                 } catch (Exception e) {
                     try {
@@ -161,12 +158,9 @@ public class MainActivity extends Activity {
                         result.put("error", e.getMessage());
 
                         runOnUiThread(() -> {
-                            String js = "androidHttpCallback('" + requestId + "', " + result.toString() + ")";
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                webView.evaluateJavascript(js, null);
-                            } else {
-                                webView.loadUrl("javascript:" + js);
-                            }
+                            String jsonStr = result.toString();
+                            String js = "androidHttpCallback('" + requestId + "', '" + jsonStr.replace("'", "\\'") + "')";
+                            webView.loadUrl("javascript:" + js);
                         });
                     } catch (Exception ignored) {
                     }
