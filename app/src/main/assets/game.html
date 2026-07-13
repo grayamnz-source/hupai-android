@@ -161,6 +161,47 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 
 <script>
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+let httpCallbacks = {};
+let httpCallbackId = 0;
+
+function androidHttp(requestId, method, url, headers, body){
+  return new Promise((resolve, reject)=>{
+    httpCallbacks[requestId] = {resolve, reject};
+    if(window.Android && typeof window.Android.httpRequest === 'function'){
+      window.Android.httpRequest(requestId, method, url, JSON.stringify(headers), body || '');
+    } else {
+      reject(new Error('Android bridge not available'));
+    }
+  });
+}
+
+function androidHttpCallback(requestId, result){
+  const cb = httpCallbacks[requestId];
+  if(!cb) return;
+  delete httpCallbacks[requestId];
+  if(result.ok){
+    cb.resolve({status: result.status, text: async ()=> result.body, json: async ()=> JSON.parse(result.body)});
+  } else {
+    cb.reject(new Error(result.error || `HTTP ${result.status}`));
+  }
+}
+
+async function httpFetch(method, url, headers, body){
+  const requestId = 'req_' + (++httpCallbackId);
+  try {
+    const resp = await androidHttp(requestId, method, url, headers, body);
+    return resp;
+  } catch(e){
+    if(window.Android && typeof window.Android.httpRequest === 'function'){
+      throw e;
+    }
+    // fallback to browser fetch for testing
+    const opts = {method, headers};
+    if(body) opts.body = body;
+    return fetch(url, opts);
+  }
+}
 const SUITS = ['♠','♥','♦','♣'];
 let cid = 0;
 
@@ -289,12 +330,9 @@ async function fetchModels(silent){
     $('aiStatus').className = 'settings-status';
   }
   try {
-    const resp = await fetch(getModelsUrl(url), {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${key}`
-      }
-    });
+    const resp = await httpFetch('GET', getModelsUrl(url), {
+      'Authorization': `Bearer ${key}`
+    }, null);
     if(!resp.ok){
       if(!silent){
         $('aiStatus').textContent = `获取失败: ${resp.status}`;
@@ -346,18 +384,14 @@ async function testConnection(){
   $('aiStatus').textContent = '测试连接中...';
   $('aiStatus').className = 'settings-status';
   try {
-    const resp = await fetch(getChatUrl(url), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [{role:'user',content:'hi'}],
-        max_tokens: 5
-      })
-    });
+    const resp = await httpFetch('POST', getChatUrl(url), {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    }, JSON.stringify({
+      model: model,
+      messages: [{role:'user',content:'hi'}],
+      max_tokens: 5
+    }));
     if(!resp.ok){
       $('aiStatus').textContent = `连接失败: ${resp.status}`;
       $('aiStatus').className = 'settings-status err';
@@ -395,16 +429,13 @@ async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastH
   const prompt = buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase, lastPlayerInfo);
   
   try {
-    const resp = await fetch(getChatUrl(aiConfig.apiUrl), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${aiConfig.apiKey}`
-      },
-      body: JSON.stringify({
-        model: aiConfig.model,
-        messages: [
-          { role: 'system', content: `你是唬牌（吹牛/作弊）游戏的高手AI玩家。请严格按照以下游戏规则思考并做出最佳决策。
+    const resp = await httpFetch('POST', getChatUrl(aiConfig.apiUrl), {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${aiConfig.apiKey}`
+    }, JSON.stringify({
+      model: aiConfig.model,
+      messages: [
+        { role: 'system', content: `你是唬牌（吹牛/作弊）游戏的高手AI玩家。请严格按照以下游戏规则思考并做出最佳决策。
 
 【游戏基本规则】
 - 3人游戏，54张牌（A-K各4张 + 小王 + 大王），平均发牌18张
@@ -458,7 +489,7 @@ async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastH
         temperature: 0.7,
         max_tokens: 150
       })
-    });
+    );
     
     if(!resp.ok){
       $('aiStatus').textContent = `API错误: ${resp.status}`;
