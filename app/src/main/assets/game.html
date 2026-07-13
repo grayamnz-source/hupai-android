@@ -353,11 +353,24 @@ function revealLast(){
 }
 
 function nextTurn(){
-  const activePlayers = G.players.filter(p=>p.hand.length>0).length;
+  const lastPlayer = G.table.length>0 ? G.table[G.table.length-1].player : -1;
   const lastFinish = isLastHandFinisher();
+  
+  if(lastFinish){
+    const activePlayers = G.players.filter(p=>p.hand.length>0).length;
+    if(activePlayers===0){
+      G.gameOver = true;
+      G.winner = lastPlayer;
+      revealedCards = G.table.reduce((acc,b)=>acc.concat(b.cards),[]);
+      addLog(`${G.players[lastPlayer].name} 赢了！`);
+      render();
+      return;
+    }
+  }
+  
+  const activePlayers = G.players.filter(p=>p.hand.length>0).length;
   const passThreshold = lastFinish ? activePlayers : (activePlayers - 1);
   if(G.passCount >= passThreshold && G.table.length>0){ 
-    const lastPlayer = G.table[G.table.length-1].player;
     if(G.players[lastPlayer].hand.length===0 && G.players[lastPlayer].tableCardsPlayed){
       G.gameOver = true;
       G.winner = lastPlayer;
@@ -366,19 +379,25 @@ function nextTurn(){
       render();
       return;
     }
-    G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; revealedCards=null; 
+    G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; revealedCards=null; G.selectedRank=null;
     addLog('连续过牌，桌面牌淘汰');
     G.turn = lastPlayer;
   }
-  do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
+  
+  if(lastFinish){
+    G.turn = (G.turn+1) % G.players.length;
+  } else {
+    do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
+  }
   render();
 }
 
 function aiTurn(){
   const p = G.players[G.turn];
-  if(p.hand.length===0) return;
-  const revealChance = Math.random() * 0.5;
-  if(isLastHandFinisher()){
+  const lastFinish = isLastHandFinisher();
+  
+  if(lastFinish){
+    const revealChance = Math.random() * 0.5;
     if(Math.random()<revealChance){
       actionReveal();
     } else {
@@ -386,6 +405,10 @@ function aiTurn(){
     }
     return;
   }
+  
+  if(p.hand.length===0) return;
+  
+  const revealChance = Math.random() * 0.5;
   if(G.table.length>0 && Math.random()<revealChance){
     actionReveal(); return;
   }
