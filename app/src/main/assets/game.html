@@ -420,9 +420,11 @@ function aiTurn(){
   for(let i=0;i<cnt && i<p.hand.length;i++) indices.push(i);
   const cards = indices.map(i=>p.hand[i]);
   p.hand = p.hand.filter((_,i)=>!indices.includes(i));
+  p.tableCardsPlayed = true;
   G.table.push({player:G.turn, cards:cards, declaredRank:rank, declaredCount:cards.length});
   G.lastDecl = {count:cards.length, rank:rank};
   G.passCount = 0;
+  G.lastHandPassCount = 0;
   const action = G.table.length===1 ? '叫牌' : '跟牌';
   addLog(`${p.name} ${action}: ${cards.length}张${rank}`);
   revealedCards = null;
