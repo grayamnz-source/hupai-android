@@ -3,6 +3,7 @@
 *.aar
 *.ap_
 *.aab
+!hupai.apk
 
 # Files for the ART/Dalvik VM
 *.dex
