@@ -90,6 +90,12 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 .settings-input::placeholder { color: #5a6b5e; }
 .settings-status { font-size: 3.2vw; color: #9fb6a6; padding: 8px 12px; background: rgba(0,0,0,.25); border-radius: 8px; }
 #aiToggle { width: fit-content; }
+.settings-label-row { display: flex; justify-content: space-between; align-items: center; }
+.test-btn { padding: 6px 14px; font-size: 3.2vw; font-weight: 700; color: #d4af37; background: rgba(212,175,55,.15); border: 1px solid rgba(212,175,55,.4); border-radius: 8px; cursor: pointer; }
+.test-btn:active { background: rgba(212,175,55,.3); }
+.settings-input select { appearance: none; }
+.settings-status.ok { color: #7ed3a0; }
+.settings-status.err { color: #e87f77; }
 </style>
 </head>
 <body>
@@ -117,15 +123,21 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
       <div class="settings-title">AI API 设置</div>
       <div class="settings-item">
         <div class="settings-label">API 地址</div>
-        <input type="text" id="apiUrl" class="settings-input" placeholder="https://api.openai.com/v1/chat/completions">
+        <input type="text" id="apiUrl" class="settings-input" placeholder="https://api.openai.com/v1">
       </div>
       <div class="settings-item">
         <div class="settings-label">API Key</div>
         <input type="password" id="apiKey" class="settings-input" placeholder="sk-...">
       </div>
       <div class="settings-item">
-        <div class="settings-label">模型名称</div>
-        <input type="text" id="apiModel" class="settings-input" placeholder="gpt-4o-mini">
+        <div class="settings-label-row">
+          <div class="settings-label">模型名称</div>
+          <button class="test-btn" onclick="fetchModels()">获取模型</button>
+        </div>
+        <select id="apiModel" class="settings-input">
+          <option value="">请选择或输入模型</option>
+        </select>
+        <input type="text" id="apiModelCustom" class="settings-input" placeholder="或手动输入模型名称">
       </div>
       <div class="settings-item">
         <div class="settings-label">启用AI决策</div>
@@ -135,8 +147,11 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
         </div>
       </div>
       <div class="settings-item">
-        <div class="settings-label">AI思考中...</div>
-        <div class="settings-status" id="aiStatus">未调用</div>
+        <div class="settings-label-row">
+          <div class="settings-label">连接状态</div>
+          <button class="test-btn" onclick="testConnection()">连接测试</button>
+        </div>
+        <div class="settings-status" id="aiStatus">未测试</div>
       </div>
       <button class="btn" onclick="saveSettings()">保存设置</button>
       <button class="link" onclick="hideSettings()">返回游戏</button>
@@ -213,9 +228,12 @@ function exitGame(){
 function showSettings(){
   $('apiUrl').value = aiConfig.apiUrl;
   $('apiKey').value = aiConfig.apiKey;
-  $('apiModel').value = aiConfig.model;
+  $('apiModelCustom').value = aiConfig.model;
   updateAIToggle();
   $('settingsScreen').hidden = false;
+  if(aiConfig.apiUrl && aiConfig.apiKey){
+    fetchModels(true);
+  }
 }
 
 function hideSettings(){
@@ -235,10 +253,134 @@ function updateAIToggle(){
   });
 }
 
+function getBaseUrl(url){
+  if(!url) return '';
+  let u = url.trim().replace(/\/+$/, '');
+  if(u.endsWith('/chat/completions')){
+    u = u.replace(/\/chat\/completions$/, '');
+  }
+  return u;
+}
+
+function getChatUrl(url){
+  const base = getBaseUrl(url);
+  if(!base) return '';
+  return base + '/chat/completions';
+}
+
+function getModelsUrl(url){
+  const base = getBaseUrl(url);
+  if(!base) return '';
+  return base + '/models';
+}
+
+async function fetchModels(silent){
+  const url = $('apiUrl').value.trim();
+  const key = $('apiKey').value.trim();
+  if(!url || !key){
+    if(!silent){
+      $('aiStatus').textContent = '请先填写API地址和Key';
+      $('aiStatus').className = 'settings-status err';
+    }
+    return;
+  }
+  if(!silent){
+    $('aiStatus').textContent = '获取模型列表中...';
+    $('aiStatus').className = 'settings-status';
+  }
+  try {
+    const resp = await fetch(getModelsUrl(url), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${key}`
+      }
+    });
+    if(!resp.ok){
+      if(!silent){
+        $('aiStatus').textContent = `获取失败: ${resp.status}`;
+        $('aiStatus').className = 'settings-status err';
+      }
+      return;
+    }
+    const data = await resp.json();
+    const models = data.data || [];
+    const select = $('apiModel');
+    select.innerHTML = '<option value="">请选择模型</option>';
+    models.forEach(m=>{
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.id;
+      select.appendChild(opt);
+    });
+    const currentModel = aiConfig.model;
+    if(currentModel){
+      const exists = Array.from(select.options).some(o=>o.value===currentModel);
+      if(exists){
+        select.value = currentModel;
+        $('apiModelCustom').value = '';
+      } else {
+        $('apiModelCustom').value = currentModel;
+      }
+    }
+    if(!silent){
+      $('aiStatus').textContent = `获取成功，共${models.length}个模型`;
+      $('aiStatus').className = 'settings-status ok';
+    }
+  } catch(e){
+    if(!silent){
+      $('aiStatus').textContent = `连接异常: ${e.message}`;
+      $('aiStatus').className = 'settings-status err';
+    }
+  }
+}
+
+async function testConnection(){
+  const url = $('apiUrl').value.trim();
+  const key = $('apiKey').value.trim();
+  const model = $('apiModel').value || $('apiModelCustom').value.trim();
+  if(!url || !key || !model){
+    $('aiStatus').textContent = '请填写API地址、Key和模型名称';
+    $('aiStatus').className = 'settings-status err';
+    return;
+  }
+  $('aiStatus').textContent = '测试连接中...';
+  $('aiStatus').className = 'settings-status';
+  try {
+    const resp = await fetch(getChatUrl(url), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{role:'user',content:'hi'}],
+        max_tokens: 5
+      })
+    });
+    if(!resp.ok){
+      $('aiStatus').textContent = `连接失败: ${resp.status}`;
+      $('aiStatus').className = 'settings-status err';
+      return;
+    }
+    const data = await resp.json();
+    if(data.choices && data.choices.length>0){
+      $('aiStatus').textContent = '连接成功 ✓';
+      $('aiStatus').className = 'settings-status ok';
+    } else {
+      $('aiStatus').textContent = '连接成功但返回格式异常';
+      $('aiStatus').className = 'settings-status ok';
+    }
+  } catch(e){
+    $('aiStatus').textContent = `连接异常: ${e.message}`;
+    $('aiStatus').className = 'settings-status err';
+  }
+}
+
 function saveSettings(){
-  aiConfig.apiUrl = $('apiUrl').value.trim();
+  aiConfig.apiUrl = getBaseUrl($('apiUrl').value.trim());
   aiConfig.apiKey = $('apiKey').value.trim();
-  aiConfig.model = $('apiModel').value.trim();
+  aiConfig.model = $('apiModel').value || $('apiModelCustom').value.trim();
   saveAIConfig();
   hideSettings();
 }
@@ -253,7 +395,7 @@ async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastH
   const prompt = buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase, lastPlayerInfo);
   
   try {
-    const resp = await fetch(aiConfig.apiUrl, {
+    const resp = await fetch(getChatUrl(aiConfig.apiUrl), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
