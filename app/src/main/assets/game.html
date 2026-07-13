@@ -123,7 +123,7 @@ let revealedCards = null;
 
 function newGame(){
   G = { players:[{name:'你', hand:[], isAI:false, tableCardsPlayed:false},{name:'电脑·甲', hand:[], isAI:true, tableCardsPlayed:false},{name:'电脑·乙', hand:[], isAI:true, tableCardsPlayed:false}],
-    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, wrongReveal:0, gameOver:false, winner:-1, selectedRank:null };
+    table:[], turn:0, lastDecl:{count:0, rank:null}, cfg:opts, busy:false, passCount:0, lastHandPassCount:0, wrongReveal:0, gameOver:false, winner:-1, selectedRank:null };
   G.turn = Math.floor(Math.random() * G.players.length);
   const deck = shuffle(makeDeck());
   const per = Math.floor(deck.length / G.players.length);
@@ -280,6 +280,9 @@ function actionReveal(){
 
 function actionPass(){
   G.passCount++;
+  if(isLastHandFinisher()){
+    G.lastHandPassCount++;
+  }
   addLog(`${G.players[G.turn].name} 过牌`);
   nextTurn();
 }
@@ -329,6 +332,7 @@ function revealLast(){
       addLog(`<b>属实 ✓</b> ${G.players[wasRevealed].name} 赢了！`);
     } else {
       G.table = [];
+      G.lastHandPassCount = 0;
       G.players[loser].hand.push(...allCards);
       if(loser===0) sortPlayerHand();
       G.lastDecl = {count:0, rank:null};
@@ -340,6 +344,7 @@ function revealLast(){
     const loser = wasRevealed;
     const nextStarter = revealer;
     G.table = [];
+    G.lastHandPassCount = 0;
     G.players[loser].hand.push(...allCards);
     if(loser===0) sortPlayerHand();
     G.lastDecl = {count:0, rank:null};
@@ -357,8 +362,8 @@ function nextTurn(){
   const lastFinish = isLastHandFinisher();
   
   if(lastFinish){
-    const activePlayers = G.players.filter(p=>p.hand.length>0).length;
-    if(activePlayers===0){
+    const otherPlayers = G.players.length - 1;
+    if(G.lastHandPassCount >= otherPlayers){
       G.gameOver = true;
       G.winner = lastPlayer;
       revealedCards = G.table.reduce((acc,b)=>acc.concat(b.cards),[]);
@@ -366,29 +371,21 @@ function nextTurn(){
       render();
       return;
     }
+    
+    do { G.turn = (G.turn+1) % G.players.length; } while(G.turn === lastPlayer);
+    
+    render();
+    return;
   }
   
   const activePlayers = G.players.filter(p=>p.hand.length>0).length;
-  const passThreshold = lastFinish ? activePlayers : (activePlayers - 1);
-  if(G.passCount >= passThreshold && G.table.length>0){ 
-    if(G.players[lastPlayer].hand.length===0 && G.players[lastPlayer].tableCardsPlayed){
-      G.gameOver = true;
-      G.winner = lastPlayer;
-      revealedCards = G.table.reduce((acc,b)=>acc.concat(b.cards),[]);
-      addLog(`${G.players[lastPlayer].name} 赢了！`);
-      render();
-      return;
-    }
-    G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; revealedCards=null; G.selectedRank=null;
+  if(G.passCount >= activePlayers - 1 && G.table.length>0){
+    G.table=[]; G.lastDecl={count:0,rank:null}; G.passCount=0; G.lastHandPassCount=0; revealedCards=null; G.selectedRank=null;
     addLog('连续过牌，桌面牌淘汰');
     G.turn = lastPlayer;
   }
   
-  if(lastFinish){
-    G.turn = (G.turn+1) % G.players.length;
-  } else {
-    do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
-  }
+  do { G.turn = (G.turn+1) % G.players.length; } while(G.players[G.turn].hand.length===0);
   render();
 }
 
