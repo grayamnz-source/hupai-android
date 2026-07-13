@@ -162,45 +162,24 @@ body { background: #0a3526; color: #f4ecd8; touch-action: manipulation; }
 <script>
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
-let httpCallbacks = {};
 let httpCallbackId = 0;
 
-function androidHttp(requestId, method, url, headers, body){
-  return new Promise((resolve, reject)=>{
-    httpCallbacks[requestId] = {resolve, reject};
-    if(window.Android && typeof window.Android.httpRequest === 'function'){
-      window.Android.httpRequest(requestId, method, url, JSON.stringify(headers), body || '');
-    } else {
-      reject(new Error('Android bridge not available'));
-    }
-  });
-}
-
-function androidHttpCallback(requestId, result){
-  const cb = httpCallbacks[requestId];
-  if(!cb) return;
-  delete httpCallbacks[requestId];
-  if(typeof result === 'string'){
-    try { result = JSON.parse(result); } catch(e){}
-  }
-  console.log('androidHttpCallback:', JSON.stringify(result));
-  if(result && result.ok){
-    cb.resolve({ok: true, status: result.status, text: async ()=> result.body, json: async ()=> JSON.parse(result.body)});
-  } else {
-    cb.reject(new Error(result?.error || `HTTP ${result?.status || 'unknown'}`));
-  }
-}
-
 async function httpFetch(method, url, headers, body){
-  const requestId = 'req_' + (++httpCallbackId);
-  try {
-    const resp = await androidHttp(requestId, method, url, headers, body);
-    return resp;
-  } catch(e){
-    if(window.Android && typeof window.Android.httpRequest === 'function'){
-      throw e;
+  if(window.Android && typeof window.Android.httpRequest === 'function'){
+    const requestId = 'req_' + (++httpCallbackId);
+    const resultStr = window.Android.httpRequest(requestId, method, url, JSON.stringify(headers), body || '');
+    const result = JSON.parse(resultStr);
+    if(result.ok){
+      return {
+        ok: true,
+        status: result.status,
+        text: async ()=> result.body,
+        json: async ()=> JSON.parse(result.body)
+      };
+    } else {
+      throw new Error(result.error || `HTTP ${result.status}`);
     }
-    // fallback to browser fetch for testing
+  } else {
     const opts = {method, headers};
     if(body) opts.body = body;
     return fetch(url, opts);

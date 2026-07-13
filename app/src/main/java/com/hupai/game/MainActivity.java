@@ -14,9 +14,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -24,8 +21,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
 
@@ -100,72 +101,61 @@ public class MainActivity extends Activity {
         }
 
         @android.webkit.JavascriptInterface
-        public void httpRequest(String requestId, String method, String urlStr, String headersJson, String bodyStr) {
-            executor.execute(() -> {
-                try {
-                    URL url = new URL(urlStr);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod(method);
-                    conn.setConnectTimeout(20000);
-                    conn.setReadTimeout(20000);
-                    conn.setDoInput(true);
+        public String httpRequest(String requestId, String method, String urlStr, String headersJson, String bodyStr) {
+            try {
+                URL url = new URL(urlStr);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod(method);
+                conn.setConnectTimeout(20000);
+                conn.setReadTimeout(20000);
+                conn.setDoInput(true);
 
-                    JSONObject headers = new JSONObject(headersJson);
-                    Iterator<String> keys = headers.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        conn.setRequestProperty(key, headers.getString(key));
-                    }
+                JSONObject headers = new JSONObject(headersJson);
+                Iterator<String> keys = headers.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    conn.setRequestProperty(key, headers.getString(key));
+                }
 
-                    if (bodyStr != null && !bodyStr.isEmpty() && (method.equalsIgnoreCase("POST") || method.equalsIgnoreCase("PUT"))) {
-                        conn.setDoOutput(true);
-                        try (OutputStream os = conn.getOutputStream()) {
-                            byte[] input = bodyStr.getBytes(StandardCharsets.UTF_8);
-                            os.write(input, 0, input.length);
-                        }
-                    }
-
-                    int status = conn.getResponseCode();
-                    BufferedReader reader;
-                    if (status >= 200 && status < 300) {
-                        reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-                    } else {
-                        reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
-                    }
-
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-
-                    JSONObject result = new JSONObject();
-                    result.put("ok", status >= 200 && status < 300);
-                    result.put("status", status);
-                    result.put("body", response.toString());
-
-                    runOnUiThread(() -> {
-                        String jsonStr = result.toString();
-                        String js = "androidHttpCallback('" + requestId + "', '" + jsonStr.replace("'", "\\'") + "')";
-                        webView.loadUrl("javascript:" + js);
-                    });
-                } catch (Exception e) {
-                    try {
-                        JSONObject result = new JSONObject();
-                        result.put("ok", false);
-                        result.put("status", 0);
-                        result.put("error", e.getMessage());
-
-                        runOnUiThread(() -> {
-                            String jsonStr = result.toString();
-                            String js = "androidHttpCallback('" + requestId + "', '" + jsonStr.replace("'", "\\'") + "')";
-                            webView.loadUrl("javascript:" + js);
-                        });
-                    } catch (Exception ignored) {
+                if (bodyStr != null && !bodyStr.isEmpty() && (method.equalsIgnoreCase("POST") || method.equalsIgnoreCase("PUT"))) {
+                    conn.setDoOutput(true);
+                    try (OutputStream os = conn.getOutputStream()) {
+                        byte[] input = bodyStr.getBytes(StandardCharsets.UTF_8);
+                        os.write(input, 0, input.length);
                     }
                 }
-            });
+
+                int status = conn.getResponseCode();
+                BufferedReader reader;
+                if (status >= 200 && status < 300) {
+                    reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                } else {
+                    reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+                }
+
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                JSONObject result = new JSONObject();
+                result.put("ok", status >= 200 && status < 300);
+                result.put("status", status);
+                result.put("body", response.toString());
+                return result.toString();
+            } catch (Exception e) {
+                try {
+                    JSONObject result = new JSONObject();
+                    result.put("ok", false);
+                    result.put("status", 0);
+                    result.put("error", e.getMessage());
+                    return result.toString();
+                } catch (Exception ignored) {
+                    return "{\"ok\":false,\"status\":0,\"error\":\"unknown\"}";
+                }
+            }
         }
     }
 
