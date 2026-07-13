@@ -181,7 +181,7 @@ function androidHttpCallback(requestId, result){
   if(!cb) return;
   delete httpCallbacks[requestId];
   if(result.ok){
-    cb.resolve({status: result.status, text: async ()=> result.body, json: async ()=> JSON.parse(result.body)});
+    cb.resolve({ok: true, status: result.status, text: async ()=> result.body, json: async ()=> JSON.parse(result.body)});
   } else {
     cb.reject(new Error(result.error || `HTTP ${result.status}`));
   }
