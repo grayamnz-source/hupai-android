@@ -243,14 +243,14 @@ function saveSettings(){
   hideSettings();
 }
 
-async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase){
+async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase, lastPlayerInfo){
   if(!aiConfig.enabled || !aiConfig.apiUrl || !aiConfig.apiKey){
     return null;
   }
   
   $('aiStatus').textContent = `${playerName} 思考中...`;
   
-  const prompt = buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase);
+  const prompt = buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase, lastPlayerInfo);
   
   try {
     const resp = await fetch(aiConfig.apiUrl, {
@@ -262,11 +262,59 @@ async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastH
       body: JSON.stringify({
         model: aiConfig.model,
         messages: [
-          { role: 'system', content: '你是唬牌（吹牛）游戏的AI玩家。根据当前游戏状态做出最佳决策。只能返回JSON格式：{"action":"play","rank":"A","count":1} 或 {"action":"pass"} 或 {"action":"reveal"}。其中rank必须是A,2,3,4,5,6,7,8,9,10,J,Q,K之一。在最后一手牌判定阶段只能选pass或reveal。' },
+          { role: 'system', content: `你是唬牌（吹牛/作弊）游戏的高手AI玩家。请严格按照以下游戏规则思考并做出最佳决策。
+
+【游戏基本规则】
+- 3人游戏，54张牌（A-K各4张 + 小王 + 大王），平均发牌18张
+- 玩家轮流出牌，出牌时声明"X张Y点数"
+- 王牌（大王、小王）可以当作任意点数
+- 你看不到其他人的手牌，也看不到桌面上牌的真实点数（都是背面朝上）
+
+【操作选项】
+1. 叫牌(play)：桌面无牌时，选择手牌并声明点数，开启新一轮
+2. 跟牌(play)：桌面有牌时，跟牌的点数必须与上家声明的点数相同（可以用假牌）
+3. 过牌(pass)：不跟牌，跳过（桌面无牌时不能过牌）
+4. 掀牌(reveal)：质疑上家，翻开上一手牌检查真假
+
+【掀牌判定】
+- 真牌：上一手牌全部符合声明点数（王牌算任意点数）→ 掀牌者收回桌面上所有牌，被掀牌者开下一轮
+- 假牌：上一手牌有不符合声明点数的牌 → 被掀牌者收回桌面上所有牌，掀牌者开下一轮
+
+【连续过牌】
+- 其他两位玩家都过牌 → 桌面牌沉底消失（淘汰），上一轮出牌者开下一轮
+
+【最后一手牌判定机制（重要！）】
+- 当某位玩家出完最后一手牌（手牌归0）→ 立即进入判定阶段
+- 出完牌的玩家称为"被判定者"，不参与操作
+- 其他两位玩家（判定者）按顺序轮流操作，每人只能选择过牌或掀牌
+- 判定阶段不进行正常出牌
+- 判定结果：
+  * 两位判定者都过牌 → 被判定者赢，游戏结束
+  * 任意判定者掀牌，牌为真 → 被判定者赢，游戏结束
+  * 任意判定者掀牌，牌为假 → 被判定者收回桌面所有牌，掀牌者开下一轮，游戏继续
+
+【赢牌条件】
+- 出完最后一手牌且通过判定（两人都过牌或掀牌为真）→ 赢
+
+【策略建议】
+- 手牌中某点数多的时候可以考虑真叫牌
+- 可以用假牌虚张声势，但有被掀牌的风险
+- 别人出牌时，根据自己手中该点数的牌数推测真假
+- 手牌少时更要谨慎，被掀牌输了要收很多牌
+- 最后一手牌判定阶段，根据牌面信息决定掀牌还是过牌
+
+【响应格式】
+只能返回一个JSON对象，不要其他文字：
+- 出牌/叫牌/跟牌：{"action":"play","rank":"A","count":1}
+  * rank必须是：A,2,3,4,5,6,7,8,9,10,J,Q,K 之一
+  * count是出牌数量，必须大于0且不超过你手牌数
+  * 跟牌时rank必须与上家声明的点数相同
+- 过牌：{"action":"pass"}
+- 掀牌：{"action":"reveal"}` },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 100
+        max_tokens: 150
       })
     });
     
@@ -292,26 +340,46 @@ async function callAIDecision(playerName, handInfo, tableInfo, lastDecl, isLastH
   }
 }
 
-function buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase){
-  let prompt = `你是玩家「${playerName}」，正在玩唬牌游戏。\n`;
-  prompt += `你的手牌：${handInfo}\n`;
+function buildGamePrompt(playerName, handInfo, tableInfo, lastDecl, isLastHandPhase, lastPlayerInfo){
+  let prompt = `你是玩家「${playerName}」，正在玩唬牌游戏。\n\n`;
+  prompt += `【当前局势】\n`;
+  prompt += `你的手牌（${handInfo.split('、').length}张）：${handInfo}\n`;
+  
+  if(lastPlayerInfo){
+    prompt += `其他玩家手牌数：`;
+    lastPlayerInfo.forEach(info => {
+      prompt += `${info.name} ${info.count}张 `;
+    });
+    prompt += `\n`;
+  }
   
   if(tableInfo){
-    prompt += `桌面已有牌：${tableInfo}\n`;
-    prompt += `上家声明：${lastDecl.count}张${lastDecl.rank}\n`;
+    prompt += `桌面历史：${tableInfo}\n`;
+    prompt += `上一手声明：${lastDecl.count}张${lastDecl.rank}\n`;
   } else {
-    prompt += `桌面无牌，你叫牌\n`;
+    prompt += `桌面无牌，轮到你叫牌\n`;
   }
   
   if(isLastHandPhase){
-    prompt += `\n注意：某位玩家已出完最后一手牌，现在进入判定阶段。你只能选择过牌(pass)或掀牌(reveal)。\n`;
-    prompt += `掀牌后如果牌是真的，出完牌的玩家赢；如果是假的，出完牌的玩家收回桌面牌，你开下轮。\n`;
+    prompt += `\n【最后一手牌判定阶段】\n`;
+    prompt += `有玩家已出完最后一手牌，进入判定阶段。\n`;
+    prompt += `你只能选择：过牌(pass) 或 掀牌(reveal)\n`;
+    prompt += `- 过牌：不质疑，继续判定\n`;
+    prompt += `- 掀牌：质疑上一手牌真假\n`;
+    prompt += `  * 真牌 → 出完牌的玩家赢，游戏结束\n`;
+    prompt += `  * 假牌 → 出完牌的玩家收回桌面所有牌，你开下一轮\n`;
   } else {
-    prompt += `\n可选操作：出牌(play)、过牌(pass)、掀牌(reveal)\n`;
-    prompt += `出牌时需指定rank和count。跟牌时rank必须与上家相同。\n`;
+    prompt += `\n【你可以选择】\n`;
+    if(tableInfo){
+      prompt += `- 跟牌(play)：出与上家声明点数相同的牌（可以假牌）\n`;
+      prompt += `- 过牌(pass)：不跟牌，跳过\n`;
+      prompt += `- 掀牌(reveal)：质疑上家牌的真假\n`;
+    } else {
+      prompt += `- 叫牌(play)：选择手牌和点数，开始新一轮\n`;
+    }
   }
   
-  prompt += `\n请返回JSON决策。`;
+  prompt += `\n请仔细分析局势，做出最有利的决策，只返回JSON。`;
   return prompt;
 }
 
@@ -577,7 +645,8 @@ async function aiTurn(){
       render();
       const handInfo = p.hand.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
       const tableInfo = G.table.map(b=>`${G.players[b.player].name}声明${b.declaredCount}张${b.declaredRank}`).join('；');
-      const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, true);
+      const otherPlayersInfo = G.players.filter(pl=>pl.name !== p.name).map(pl=>({name:pl.name, count:pl.hand.length}));
+      const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, true, otherPlayersInfo);
       G.busy = false;
       if(decision){
         if(decision.action === 'reveal'){
@@ -604,7 +673,8 @@ async function aiTurn(){
     render();
     const handInfo = p.hand.map(c=>c.isJoker?c.label:(c.rank+c.suit)).join('、');
     const tableInfo = G.table.length>0 ? G.table.map(b=>`${G.players[b.player].name}声明${b.declaredCount}张${b.declaredRank}`).join('；') : null;
-    const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, false);
+    const otherPlayersInfo = G.players.filter(pl=>pl.name !== p.name).map(pl=>({name:pl.name, count:pl.hand.length}));
+    const decision = await callAIDecision(p.name, handInfo, tableInfo, G.lastDecl, false, otherPlayersInfo);
     G.busy = false;
     if(decision){
       if(decision.action === 'pass' && G.table.length > 0){
